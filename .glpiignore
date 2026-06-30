@@ -1,0 +1,27 @@
+# Files/folders excluded from the GLPI plugin release tarball.
+# Pattern syntax: same as .gitignore (one per line).
+
+.git
+.gitignore
+.glpiignore
+.github
+.idea
+.vscode
+.claude
+CLAUDE.md
+.editorconfig
+*.swp
+*~
+.DS_Store
+Thumbs.db
+dist
+build
+.build
+node_modules
+tests
+phpunit.xml*
+phpcs.xml*
+phpstan.neon*
+*.tar.bz2
+*.tar.gz
+*.zip

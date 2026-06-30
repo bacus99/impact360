@@ -1,0 +1,21 @@
+{
+    "name": "bacus99/glpi-impact360",
+    "description": "GLPI 11 plugin: interactive dependency/impact map with application health roll-up and an Application Health board, optionally enriched by observed network dependencies (netstatconnections).",
+    "type": "glpi-plugin",
+    "license": "GPL-3.0-or-later",
+    "homepage": "https://github.com/bacus99/impact360",
+    "authors": [
+        {
+            "name": "Christian Bernard",
+            "homepage": "https://github.com/bacus99"
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "GlpiPlugin\\Impact360\\": "src/"
+        }
+    }
+}

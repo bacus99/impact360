@@ -1,0 +1,235 @@
+/*
+ * UX Customizer — Impact Map page styles.
+ * Scoped to .uxc-impact-page so we don't leak into the rest of GLPI.
+ */
+
+.uxc-impact-page {
+    --uxc-impact-bg: var(--tblr-body-bg, #f8fafc);
+    --uxc-impact-card-bg: var(--tblr-card-bg, #ffffff);
+    --uxc-impact-border: var(--tblr-border-color, #e2e8f0);
+    --uxc-impact-fg: var(--tblr-body-color, #0f172a);
+    --uxc-impact-muted: var(--tblr-secondary, #6b7280);
+
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────────────── */
+.uxc-impact-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.uxc-impact-toolbar .uxc-impact-search {
+    min-width: 220px;
+}
+
+.uxc-impact-toolbar .uxc-impact-status {
+    margin-left: auto;
+    font-size: 0.875rem;
+    color: var(--uxc-impact-muted);
+}
+
+.uxc-impact-status--info    { color: var(--uxc-impact-muted); }
+.uxc-impact-status--error   { color: var(--tblr-danger, #d63939); }
+
+/* ── Legend ───────────────────────────────────────────────────────────── */
+.uxc-impact-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    font-size: 0.8rem;
+    color: var(--uxc-impact-muted);
+    padding: 0.25rem 0.5rem;
+}
+
+/* Clickable pill: hover shows it's interactive; "off" state mutes the row. */
+.uxc-impact-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.1rem 0.55rem;
+    color: inherit;
+    font: inherit;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
+}
+
+.uxc-impact-legend-item:hover {
+    background: var(--tblr-active-bg, #f1f5f9);
+    border-color: var(--uxc-impact-border);
+}
+
+.uxc-impact-legend-item--off {
+    opacity: 0.4;
+    text-decoration: line-through;
+}
+
+.uxc-impact-legend-item--off .uxc-impact-swatch {
+    filter: grayscale(0.7);
+}
+
+.uxc-impact-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+}
+
+/* BFS depth selectors (on-asset tab only). Compact, no wrap. */
+.uxc-impact-depth {
+    gap: 0.15rem;
+}
+
+.uxc-impact-depth label {
+    color: var(--uxc-impact-muted);
+    white-space: nowrap;
+}
+
+/* Active state for outline buttons (layout toggle, minimap). */
+.uxc-impact-toolbar .btn.active {
+    background: var(--tblr-primary, #206bc4);
+    color: #fff;
+    border-color: var(--tblr-primary, #206bc4);
+}
+
+/* Analysis-mode active buttons keep their semantic colour when toggled on. */
+.uxc-impact-toolbar .uxc-impact-whatif.active {
+    background: var(--tblr-danger, #d63939);
+    color: #fff;
+    border-color: var(--tblr-danger, #d63939);
+}
+.uxc-impact-toolbar .uxc-impact-path.active {
+    background: var(--tblr-primary, #2563eb);
+    color: #fff;
+    border-color: var(--tblr-primary, #2563eb);
+}
+
+/* In an analysis mode, the canvas cursor signals "pick a node". */
+.uxc-impact-canvas.uxc-impact-analyzing {
+    cursor: crosshair;
+}
+
+/* ── Mini-map overview inset ──────────────────────────────────────────── */
+.uxc-impact-minimap {
+    position: absolute;
+    left: 0.5rem;
+    bottom: 0.5rem;
+    width: 200px;
+    height: 140px;
+    background: var(--uxc-impact-card-bg, #fff);
+    border: 1px solid var(--uxc-impact-border, #e2e8f0);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    overflow: hidden;
+    z-index: 5;
+}
+
+/* ── Stage (canvas + side panel) ──────────────────────────────────────── */
+.uxc-impact-stage {
+    position: relative;
+    height: 70vh;
+    min-height: 480px;
+    border: 1px solid var(--uxc-impact-border);
+    border-radius: 8px;
+    background: var(--uxc-impact-card-bg);
+    overflow: hidden;
+}
+
+.uxc-impact-canvas {
+    position: absolute;
+    inset: 0;
+}
+
+/* The "empty graph" notice. */
+.uxc-impact-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--uxc-impact-muted);
+    padding: 2rem;
+}
+
+/* ── Side panel ───────────────────────────────────────────────────────── */
+.uxc-impact-side {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 280px;
+    max-height: calc(100% - 1rem);
+    background: var(--uxc-impact-card-bg);
+    border: 1px solid var(--uxc-impact-border);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    transform: translateX(calc(100% + 1rem));
+    transition: transform 220ms ease;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.uxc-impact-side--open {
+    transform: translateX(0);
+}
+
+.uxc-impact-side-head {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.95rem;
+}
+
+.uxc-impact-side-body {
+    padding: 0.75rem;
+    overflow-y: auto;
+}
+
+.uxc-impact-kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 0.25rem 0.75rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+}
+
+.uxc-impact-kv dt {
+    color: var(--uxc-impact-muted);
+    font-weight: 600;
+}
+
+.uxc-impact-kv dd {
+    margin: 0;
+    color: var(--uxc-impact-fg);
+}
+
+/* ── HTML tooltip override (vis-network renders DOM nodes as HTML) ────── */
+.vis-tooltip {
+    background: #111827 !important;
+    color: #f8fafc !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 0.5rem 0.65rem !important;
+    font-size: 0.825rem !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+    max-width: 240px;
+}
+
+.uxc-impact-tip strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.uxc-impact-tip-sub {
+    opacity: 0.75;
+    font-size: 0.8em;
+}

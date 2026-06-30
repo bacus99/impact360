@@ -1,0 +1,13 @@
+.build/
+dist/
+build/
+node_modules/
+*.tar.bz2
+*.tar.gz
+*.zip
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/

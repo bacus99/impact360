@@ -1,0 +1,11 @@
+# Translation template for the impact360 GLPI plugin.
+# Generate per-language .po/.mo with GLPI's standard locale tooling.
+msgid ""
+msgstr ""
+"Project-Id-Version: Impact360 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: manual\n"

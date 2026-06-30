@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+   <name>Impact360</name>
+   <key>impact360</key>
+   <state>stable</state>
+
+   <logo>https://raw.githubusercontent.com/bacus99/impact360/main/logo.svg</logo>
+
+   <description>
+      <short>
+         <en><![CDATA[Interactive dependency/impact map with application health roll-up and an Application Health board.]]></en>
+         <fr><![CDATA[Carte de dépendances/impacts interactive avec agrégation de santé applicative et tableau de bord de santé des applications.]]></fr>
+      </short>
+      <long>
+         <en><![CDATA[
+Impact360 turns GLPI's impact data into an operational dependency map.<br /><br />
+<strong>Key features:</strong><br />
+- Interactive "Impact Map" tab on Computers, Appliances and ITIL objects (Ticket/Change/Problem), with a clean dagre flow layout.<br />
+- Explore mode: start at the focused CI and click a node to reveal its next hop — no sprawl.<br />
+- Application health roll-up on Appliances (worst-of members), dependency-aware: a service is at risk when a CI it depends on is degraded.<br />
+- Application Health board: every Appliance as a health tile, worst-first.<br />
+- Optional observed-traffic overlay sourced from the netstatconnections plugin (real TCP/UDP dependencies) — a soft dependency, gracefully absent when the plugin is not installed.<br />
+- Read-only and entity-scoped; coexists with GLPI's native Impact Analysis tab.
+         ]]></en>
+         <fr><![CDATA[
+Impact360 transforme les données d'impact de GLPI en une carte de dépendances opérationnelle.<br /><br />
+<strong>Fonctionnalités principales :</strong><br />
+- Onglet « Impact Map » interactif sur les Ordinateurs, Appliances et objets ITIL (Ticket/Changement/Problème), avec une disposition « flow » dagre lisible.<br />
+- Mode Explorer : on part du CI sélectionné et un clic révèle le saut suivant — sans surcharge visuelle.<br />
+- Agrégation de santé applicative sur les Appliances (pire des membres), tenant compte des dépendances : un service est à risque quand un CI dont il dépend est dégradé.<br />
+- Tableau de bord de santé des applications : chaque Appliance sous forme de tuile, les plus critiques en premier.<br />
+- Superposition optionnelle du trafic observé via le plugin netstatconnections (dépendances TCP/UDP réelles) — dépendance souple, absente proprement si le plugin n'est pas installé.<br />
+- En lecture seule et restreint par entité ; coexiste avec l'onglet natif d'analyse d'impact de GLPI.
+         ]]></fr>
+      </long>
+   </description>
+
+   <homepage>https://github.com/bacus99/impact360</homepage>
+   <download>https://github.com/bacus99/impact360/releases</download>
+   <issues>https://github.com/bacus99/impact360/issues</issues>
+   <readme>https://github.com/bacus99/impact360/blob/main/README.md</readme>
+
+   <authors>
+      <author>Christian Bernard</author>
+   </authors>
+
+   <versions>
+      <version>
+         <num>1.0.0</num>
+         <compatibility>~11.0.0</compatibility>
+         <download_url>https://github.com/bacus99/impact360/releases/download/1.0.0/glpi-impact360-1.0.0.tar.bz2</download_url>
+      </version>
+   </versions>
+
+   <langs>
+      <lang>en_GB</lang>
+      <lang>fr_FR</lang>
+   </langs>
+
+   <license>GPL-3.0-or-later</license>
+
+   <category>inventory</category>
+
+   <tags>
+      <en>
+         <tag>impact</tag>
+         <tag>dependencies</tag>
+         <tag>cmdb</tag>
+         <tag>map</tag>
+         <tag>health</tag>
+      </en>
+      <fr>
+         <tag>impact</tag>
+         <tag>dépendances</tag>
+         <tag>cmdb</tag>
+         <tag>carte</tag>
+         <tag>santé</tag>
+      </fr>
+   </tags>
+
+   <screenshots>
+      <!-- Add captured screenshots (impact map, explore mode, health board). -->
+   </screenshots>
+</root>

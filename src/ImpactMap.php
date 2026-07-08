@@ -564,7 +564,7 @@ class ImpactMap
      * @return array{
      *   level: ?string, total: int,
      *   counts: array{ok:int,warn:int,crit:int,unknown:int},
-     *   worst: list<array{itemtype:string,items_id:int,name:string,level:string}>
+     *   worst: list<array{itemtype:string,items_id:int,name:string,level:string,kind:string,tickets:?int,agent_days:?int}>
      * }
      */
     public static function rollupHealth(string $itemtype, int $items_id, bool $withDeps = true): array
@@ -642,12 +642,14 @@ class ImpactMap
             $counts[$lvl]++;
             if ($lvl === 'warn' || $lvl === 'crit') {
                 $worst[] = [
-                    'itemtype' => $m['itemtype'],
-                    'items_id' => $m['items_id'],
-                    'name'     => $names[$m['itemtype']][$m['items_id']]
-                                  ?? ($m['itemtype'] . ' #' . $m['items_id']),
-                    'level'    => $lvl,
-                    'kind'     => 'member',
+                    'itemtype'   => $m['itemtype'],
+                    'items_id'   => $m['items_id'],
+                    'name'       => $names[$m['itemtype']][$m['items_id']]
+                                    ?? ($m['itemtype'] . ' #' . $m['items_id']),
+                    'level'      => $lvl,
+                    'kind'       => 'member',
+                    'tickets'    => $t,
+                    'agent_days' => $a,
                 ];
             }
             if ($top === null || $rank[$lvl] > $rank[$top]) {
@@ -691,12 +693,14 @@ class ImpactMap
                     if ($lvl === 'warn' || $lvl === 'crit') {
                         $depsDegraded++;
                         $worst[] = [
-                            'itemtype' => $d['itemtype'],
-                            'items_id' => $d['items_id'],
-                            'name'     => $dNames[$d['itemtype']][$d['items_id']]
-                                          ?? ($d['itemtype'] . ' #' . $d['items_id']),
-                            'level'    => $lvl,
-                            'kind'     => 'dependency',
+                            'itemtype'   => $d['itemtype'],
+                            'items_id'   => $d['items_id'],
+                            'name'       => $dNames[$d['itemtype']][$d['items_id']]
+                                            ?? ($d['itemtype'] . ' #' . $d['items_id']),
+                            'level'      => $lvl,
+                            'kind'       => 'dependency',
+                            'tickets'    => $t,
+                            'agent_days' => $a,
                         ];
                     }
                     if ($top === null || $rank[$lvl] > $rank[$top]) {

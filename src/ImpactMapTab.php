@@ -151,7 +151,12 @@ class ImpactMapTab extends CommonGLPI
                     . ' style="border-left:4px solid ' . $col . ';background:rgba(0,0,0,.03);border-radius:4px">';
                 echo '<i class="ti ' . $ic . ' me-2" style="color:' . $col . ';font-size:1.25rem"></i>';
                 echo '<strong style="color:' . $col . '">' . $lbl . '</strong>';
-                echo '<span class="text-muted ms-2 small">'
+                echo '<span class="text-muted ms-2 small" title="'
+                    . htmlspecialchars(
+                        __('Degraded = open ticket(s) on the CI and/or its agent silent for more than 2 days. Both at once = critical.', 'impact360'),
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) . '">'
                     . sprintf(__('%1$d of %2$d components degraded', 'impact360'), $degraded, (int) $roll['total'])
                     . '</span>';
                 // Phase 3: dependency-aware — CIs the members depend on (real
@@ -167,9 +172,25 @@ class ImpactMapTab extends CommonGLPI
                 if (!empty($roll['worst'])) {
                     $links = [];
                     foreach ($roll['worst'] as $w) {
-                        $u   = $rootDoc . '/front/' . $w['itemtype'] . '.form.php?id=' . $w['items_id'];
-                        $tag = (($w['kind'] ?? 'member') === 'dependency')
-                            ? ' <span class="text-muted">(' . __('dependency', 'impact360') . ')</span>'
+                        $u = $rootDoc . '/front/' . $w['itemtype'] . '.form.php?id=' . $w['items_id'];
+                        // Say WHY the CI is degraded, mirroring healthLevel()'s
+                        // signals — a bare hostname tells the operator nothing.
+                        $why = [];
+                        if (($w['kind'] ?? 'member') === 'dependency') {
+                            $why[] = __('dependency', 'impact360');
+                        }
+                        $t = $w['tickets'] ?? null;
+                        if ($t !== null && $t > 0) {
+                            $why[] = sprintf(_n('%d open ticket', '%d open tickets', $t, 'impact360'), $t);
+                        }
+                        $a = $w['agent_days'] ?? null;
+                        if ($a !== null && $a > 2) {
+                            $why[] = sprintf(__('agent silent %d days', 'impact360'), (int) $a);
+                        }
+                        $tag = $why !== []
+                            ? ' <span class="text-muted">('
+                                . htmlspecialchars(implode(', ', $why), ENT_QUOTES, 'UTF-8')
+                                . ')</span>'
                             : '';
                         $links[] = '<a href="' . htmlspecialchars($u, ENT_QUOTES, 'UTF-8') . '">'
                             . htmlspecialchars($w['name'], ENT_QUOTES, 'UTF-8') . '</a>' . $tag;

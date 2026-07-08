@@ -1,0 +1,44 @@
+# Canonical GLPI plugin syntax gate — from ../GLPI-Shared/templates/lint.yml.
+# With no local PHP on the dev machine, this is the only pre-deploy syntax check.
+
+name: Lint
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PHP_DIR: '.'
+
+jobs:
+  php:
+    name: PHP syntax + SQL-quote guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'        # match the GLPI 11 server (PHP 8.3.x)
+          coverage: none
+
+      - name: php -l on every PHP file
+        run: |
+          echo "Linting all plugin PHP files under ${PHP_DIR}..."
+          # xargs returns non-zero if ANY php -l fails, so the step fails the build.
+          find "${PHP_DIR}" -type f -name '*.php' -not -path '*/vendor/*' -print0 \
+            | xargs -0 -n1 php -l
+
+      - name: Guard — no double quotes inside SQL "--" comments
+        run: |
+          # A double quote inside an SQL '--' comment that lives inside a
+          # double-quoted PHP string closes the string early -> parse error.
+          if grep -rnE '^[[:space:]]*--.*"' --include='*.php' "${PHP_DIR}"; then
+            echo "::error::Double quote found inside an SQL '--' comment. Inside a"
+            echo "double-quoted PHP query string this terminates the string. Use"
+            echo "single quotes, backticks, or drop the quotes."
+            exit 1
+          fi
+          echo "OK — no risky SQL-comment quotes."

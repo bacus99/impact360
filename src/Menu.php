@@ -3,9 +3,10 @@
 /**
  * Impact360 - menu entry
  *
- * Adds an "Application Health" entry under Assets that opens the portfolio
- * board (front/portfolio.php). Registered via
- * $PLUGIN_HOOKS['menu_toadd']['impact360'] = ['assets' => Menu::class].
+ * Adds an "Application Health" entry under the top-level Plugins menu (its own
+ * root entry, not under Assets) that opens the portfolio board
+ * (front/portfolio.php). Registered via
+ * $PLUGIN_HOOKS['menu_toadd']['impact360'] = ['plugins' => Menu::class].
  *
  * @license   GPL-3.0-or-later
  */

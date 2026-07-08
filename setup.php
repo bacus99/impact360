@@ -22,7 +22,7 @@ use GlpiPlugin\Impact360\ConfigMenu;
 use GlpiPlugin\Impact360\ImpactMapTab;
 use GlpiPlugin\Impact360\Menu;
 
-define('PLUGIN_IMPACT360_VERSION',          '1.0.0');
+define('PLUGIN_IMPACT360_VERSION',          '1.0.1');
 define('PLUGIN_IMPACT360_MIN_GLPI_VERSION', '11.0.0');
 define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.0.99');
 
@@ -37,10 +37,11 @@ function plugin_init_impact360(): void
     // menu entry (menu_toadd 'config' → ConfigMenu). Enforces config UPDATE.
     $PLUGIN_HOOKS['config_page']['impact360'] = 'front/config.php';
 
-    // Menu entries: Application Health board under Assets; settings under Setup.
+    // Menu entries: Application Health board under the top-level Plugins menu
+    // (its own root entry, not nested under Assets); settings under Setup.
     $PLUGIN_HOOKS['menu_toadd']['impact360'] = [
-        'assets' => Menu::class,
-        'config' => ConfigMenu::class,
+        'plugins' => Menu::class,
+        'config'  => ConfigMenu::class,
     ];
 
     // Put the Computer "Dashboard" tab first (client-side — GLPI 11 has no

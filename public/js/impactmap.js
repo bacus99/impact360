@@ -1658,6 +1658,12 @@
                         ? escapeHtml(t('today', 'today'))
                         : escapeHtml(h.agent_days) + ' ' + escapeHtml(t('days_ago', 'days ago'))) + '</dd>';
             }
+            if (h.vulns) {
+                const vdot = h.vulns === 'crit' ? '#d63939' : (h.vulns === 'warn' ? '#f59f00' : '#2fb344');
+                healthRows += '<dt>' + t('vulns', 'Vulnerabilities') + '</dt><dd>' +
+                    '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + vdot + ';margin-right:0.35rem"></span>' +
+                    escapeHtml(t('vulns_' + h.vulns, h.vulns)) + '</dd>';
+            }
         }
 
         sidePanel.innerHTML =

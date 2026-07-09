@@ -350,6 +350,7 @@ class ImpactMap
         // ── 6b. Health signals (batched — never per-node queries) ───────────
         $ticketCounts = self::openTicketCounts($byType); // null if source unavailable
         $agentDays    = self::agentStaleness($byType);   // itemtype => id => days
+        $vulnLevels   = self::vulnLevels($byType);       // computers_id => level (nexposesync)
 
         // ── 7. Read compound memberships ─────────────────────────────────────
         $memberCompound = []; // 'Type:id' => parent_compound_id
@@ -409,7 +410,10 @@ class ImpactMap
                 ? null
                 : (int) ($ticketCounts[$n['itemtype']][$n['items_id']] ?? 0);
             $aDays   = $agentDays[$n['itemtype']][$n['items_id']] ?? null;
-            $level   = self::healthLevel($tickets, $aDays);
+            $vulns   = ($n['itemtype'] === 'Computer')
+                ? ($vulnLevels[$n['items_id']] ?? null)
+                : null;
+            $level   = self::healthLevel($tickets, $aDays, $vulns);
             $nodeLevel[$key] = $level;
 
             // Tooltip — vis-network renders this as plain text by default; the
@@ -423,6 +427,15 @@ class ImpactMap
             if ($aDays !== null && $aDays > 2) {
                 $tipExtra .= '<div class="uxc-impact-tip-sub">'
                     . sprintf(__('Agent silent for %d days', 'impact360'), $aDays)
+                    . '</div>';
+            }
+            if ($vulns === 'crit') {
+                $tipExtra .= '<div class="uxc-impact-tip-sub">'
+                    . __('Critical/exploitable vulnerabilities (Nexpose)', 'impact360')
+                    . '</div>';
+            } elseif ($vulns === 'warn') {
+                $tipExtra .= '<div class="uxc-impact-tip-sub">'
+                    . __('Severe vulnerabilities (Nexpose)', 'impact360')
                     . '</div>';
             }
             $title = '<div class="uxc-impact-tip">'
@@ -449,6 +462,7 @@ class ImpactMap
                     'level'      => $level,
                     'tickets'    => $tickets,
                     'agent_days' => $aDays,
+                    'vulns'      => $vulns,
                 ],
             ];
         }
@@ -537,20 +551,92 @@ class ImpactMap
     }
 
     /**
-     * Derive a health level from the two batched signals (open tickets, agent
-     * staleness days). null = no signal at all (no overlay / not counted).
-     * Shared by the per-node overlay and the Appliance roll-up so they agree.
+     * Derive a health level from the batched signals (open tickets, agent
+     * staleness days, Nexpose exposure). null = no signal at all (no overlay /
+     * not counted). Shared by the per-node overlay and the Appliance roll-up
+     * so they agree.
+     *
+     * The vuln signal is asymmetric on purpose: 'crit' exposure (critical or
+     * exploitable vulns) counts as TWO issues so it drives the node red on its
+     * own — a fully-patched-process signal (tickets/agent) must not mask a
+     * critical vulnerability. 'warn' (severe only) contributes one issue.
      */
-    private static function healthLevel(?int $tickets, ?int $agentDays): ?string
+    private static function healthLevel(?int $tickets, ?int $agentDays, ?string $vulns = null): ?string
     {
         $signals = 0;
         $issues  = 0;
         if ($tickets !== null)   { $signals++; if ($tickets > 0)   { $issues++; } }
         if ($agentDays !== null) { $signals++; if ($agentDays > 2) { $issues++; } }
+        if ($vulns !== null) {
+            $signals++;
+            if ($vulns === 'crit') {
+                $issues += 2;
+            } elseif ($vulns === 'warn') {
+                $issues++;
+            }
+        }
         if ($signals === 0) {
             return null;
         }
         return $issues === 0 ? 'ok' : ($issues >= 2 ? 'crit' : 'warn');
+    }
+
+    /**
+     * Batched Nexpose exposure level per Computer id, read from nexposesync's
+     * local cache table — guarded soft dependency, same pattern as the netstat
+     * observed-traffic overlay (tableExists + isPluginActive; absent → []).
+     * Gated by the dashboard 'vulns' health setting so ONE toggle governs the
+     * dashboard card, the map overlay and the app roll-up.
+     *
+     * Placeholder rows (nexpose_asset_id = 0 = unmatched check) are excluded:
+     * an unmatched computer has NO vuln signal, not a clean one.
+     *
+     * @param array<string,int[]> $byType itemtype => ids (only Computer is read)
+     * @return array<int,string>  computers_id => 'ok'|'warn'|'crit'
+     */
+    private static function vulnLevels(array $byType): array
+    {
+        global $DB;
+
+        $ids = array_values(array_unique(array_map('intval', $byType['Computer'] ?? [])));
+        if ($ids === []
+            || empty(ComputerDashboard::healthSettings()['vulns'])
+            || !\Plugin::isPluginActive('nexposesync')
+            || !$DB->tableExists('glpi_plugin_nexposesync_assets')) {
+            return [];
+        }
+
+        $sums = []; // id => [crit, severe, exploits]
+        try {
+            foreach ($DB->request([
+                'SELECT' => ['computers_id', 'critical_count', 'severe_count', 'exploits_count'],
+                'FROM'   => 'glpi_plugin_nexposesync_assets',
+                'WHERE'  => [
+                    'computers_id' => $ids,
+                    ['nexpose_asset_id' => ['>', 0]],
+                ],
+            ]) as $r) {
+                $cid = (int) $r['computers_id'];
+                $sums[$cid][0] = ($sums[$cid][0] ?? 0) + (int) $r['critical_count'];
+                $sums[$cid][1] = ($sums[$cid][1] ?? 0) + (int) $r['severe_count'];
+                $sums[$cid][2] = ($sums[$cid][2] ?? 0) + (int) $r['exploits_count'];
+            }
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($sums as $cid => [$crit, $severe, $exploits]) {
+            if ($crit > 0 || $exploits > 0) {
+                $out[$cid] = 'crit';
+            } elseif ($severe > 0) {
+                $out[$cid] = 'warn';
+            } else {
+                $out[$cid] = 'ok';
+            }
+        }
+
+        return $out;
     }
 
     /**
@@ -623,6 +709,7 @@ class ImpactMap
         foreach ($members as $m) { $byType[$m['itemtype']][] = $m['items_id']; }
         $tickets = self::openTicketCounts($byType);
         $agent   = self::agentStaleness($byType);
+        $vulns   = self::vulnLevels($byType);
         $names   = self::resolveNames($byType);
 
         $rank   = ['ok' => 1, 'warn' => 2, 'crit' => 3];
@@ -634,7 +721,8 @@ class ImpactMap
                 ? null
                 : (int) ($tickets[$m['itemtype']][$m['items_id']] ?? 0);
             $a   = $agent[$m['itemtype']][$m['items_id']] ?? null;
-            $lvl = self::healthLevel($t, $a);
+            $v   = ($m['itemtype'] === 'Computer') ? ($vulns[$m['items_id']] ?? null) : null;
+            $lvl = self::healthLevel($t, $a, $v);
             if ($lvl === null) {
                 $counts['unknown']++;
                 continue;
@@ -650,6 +738,7 @@ class ImpactMap
                     'kind'       => 'member',
                     'tickets'    => $t,
                     'agent_days' => $a,
+                    'vulns'      => $v,
                 ];
             }
             if ($top === null || $rank[$lvl] > $rank[$top]) {
@@ -679,6 +768,7 @@ class ImpactMap
                 foreach ($deps as $d) { $byType[$d['itemtype']][] = $d['items_id']; }
                 $dTickets = self::openTicketCounts($byType);
                 $dAgent   = self::agentStaleness($byType);
+                $dVulns   = self::vulnLevels($byType);
                 $dNames   = self::resolveNames($byType);
                 foreach ($deps as $d) {
                     $depsTotal++;
@@ -686,7 +776,8 @@ class ImpactMap
                         ? null
                         : (int) ($dTickets[$d['itemtype']][$d['items_id']] ?? 0);
                     $a   = $dAgent[$d['itemtype']][$d['items_id']] ?? null;
-                    $lvl = self::healthLevel($t, $a);
+                    $v   = ($d['itemtype'] === 'Computer') ? ($dVulns[$d['items_id']] ?? null) : null;
+                    $lvl = self::healthLevel($t, $a, $v);
                     if ($lvl === null) {
                         continue;
                     }
@@ -701,6 +792,7 @@ class ImpactMap
                             'kind'       => 'dependency',
                             'tickets'    => $t,
                             'agent_days' => $a,
+                            'vulns'      => $v,
                         ];
                     }
                     if ($top === null || $rank[$lvl] > $rank[$top]) {

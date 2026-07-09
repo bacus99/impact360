@@ -15,9 +15,13 @@
 
 $h = static fn($v) => htmlspecialchars((string) $v, ENT_QUOTES, 'UTF-8');
 
-/** One security status card. ok===true → good, false → bad, null → unknown. */
+/**
+ * One security status card. Prefers an explicit 4-state $c['level']
+ * (ok/warn/bad/unknown); falls back to the ok tri-state used by native cards
+ * (ok===true → good, false → bad, null → unknown).
+ */
 $card = static function (array $c) use ($h): string {
-    $state = $c['ok'] === true ? 'ok' : ($c['ok'] === false ? 'bad' : 'unknown');
+    $state = $c['level'] ?? ($c['ok'] === true ? 'ok' : ($c['ok'] === false ? 'bad' : 'unknown'));
     return '<div class="uxc-card uxc-status-card uxc-' . $state . '">'
         . '<div class="uxc-status-title"><span class="uxc-dot"></span>' . $h($c['label']) . '</div>'
         . '<div class="uxc-status-detail">' . $h($c['detail']) . '</div>'
@@ -44,10 +48,13 @@ $num     = static fn($v) => $v === null ? '—' : (int) $v;
   </div>
 
   <!-- Security status cards -->
-  <div class="uxc-grid uxc-grid-3">
+  <div class="uxc-grid <?= !empty($data['security']) ? 'uxc-grid-4' : 'uxc-grid-3' ?>">
     <?= $card($data['connectivity']) ?>
     <?= $card($data['antivirus']) ?>
     <?= $card($data['health']) ?>
+    <?php if (!empty($data['security'])): ?>
+    <?= $card($data['security']) ?>
+    <?php endif; ?>
   </div>
 
   <!-- Consolidated System info card (Software + Hardware + Lifecycle + Details) -->

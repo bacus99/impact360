@@ -128,17 +128,20 @@
     display: inline-block; width: 9px; height: 9px; border-radius: 50%;
     margin-right: 0.45rem; background: var(--uxc-muted); vertical-align: middle;
 }
-.uxc-ci-detail .uxc-status-card.uxc-ok  .uxc-dot { background: var(--uxc-ok); }
-.uxc-ci-detail .uxc-status-card.uxc-bad .uxc-dot { background: var(--uxc-bad); }
+.uxc-ci-detail .uxc-status-card.uxc-ok   .uxc-dot { background: var(--uxc-ok); }
+.uxc-ci-detail .uxc-status-card.uxc-bad  .uxc-dot { background: var(--uxc-bad); }
+.uxc-ci-detail .uxc-status-card.uxc-warn .uxc-dot { background: var(--uxc-warn); }
 
 /* ── Security status cards ── */
 .uxc-ci-detail .uxc-status-card { border-left: 4px solid var(--uxc-muted); }
 .uxc-ci-detail .uxc-status-card.uxc-ok      { border-left-color: var(--uxc-ok); }
 .uxc-ci-detail .uxc-status-card.uxc-bad     { border-left-color: var(--uxc-bad); }
+.uxc-ci-detail .uxc-status-card.uxc-warn    { border-left-color: var(--uxc-warn); }
 .uxc-ci-detail .uxc-status-card.uxc-unknown { border-left-color: var(--uxc-muted); }
 .uxc-ci-detail .uxc-status-title { font-weight: 600; }
 .uxc-ci-detail .uxc-status-card.uxc-ok      .uxc-status-title { color: var(--uxc-ok); }
 .uxc-ci-detail .uxc-status-card.uxc-bad     .uxc-status-title { color: var(--uxc-bad); }
+.uxc-ci-detail .uxc-status-card.uxc-warn    .uxc-status-title { color: var(--uxc-warn); }
 .uxc-ci-detail .uxc-status-detail { color: var(--uxc-muted); font-size: 0.85rem; margin-top: 0.4rem; }
 
 /* ── Metrics ── */

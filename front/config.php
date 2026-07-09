@@ -32,6 +32,7 @@ if (isset($_POST['save_health'])) {
         'tickets'          => isset($_POST['chk_tickets']),
         'os'               => isset($_POST['chk_os']),
         'retention'        => isset($_POST['chk_retention']),
+        'vulns'            => isset($_POST['chk_vulns']),
         'agent_days'       => $_POST['agent_days']       ?? 2,
         'max_open_tickets' => $_POST['max_open_tickets'] ?? 0,
     ]);
@@ -53,6 +54,8 @@ $toggles = [
     ['os',           __('Operating system inventoried', 'impact360'), ''],
     ['retention',    __('Within asset retention period', 'impact360'),
         __('Requires the uxcustomizer plugin (Lifecycle / retention policy).', 'impact360')],
+    ['vulns',        __('No critical vulnerabilities', 'impact360'),
+        __('Requires the nexposesync plugin. Also drives the Impact Map / Application Health vulnerability tinting.', 'impact360')],
 ];
 
 echo '<div class="container-fluid mt-3" style="max-width:760px">';

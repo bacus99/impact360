@@ -99,6 +99,7 @@ class ComputerDashboard extends CommonGLPI
             'tickets'          => true,
             'os'               => true,
             'retention'        => true,
+            'vulns'            => true,   // no critical vulns (nexposesync)
             'agent_days'       => 2,
             'max_open_tickets' => 0,
         ];
@@ -117,6 +118,7 @@ class ComputerDashboard extends CommonGLPI
             'tickets'          => !empty($s['tickets']),
             'os'               => !empty($s['os']),
             'retention'        => !empty($s['retention']),
+            'vulns'            => !empty($s['vulns']),
             'agent_days'       => max(0, (int) ($s['agent_days'] ?? 2)),
             'max_open_tickets' => max(0, (int) ($s['max_open_tickets'] ?? 0)),
         ];
@@ -311,8 +313,81 @@ class ComputerDashboard extends CommonGLPI
             'overdue'         => $overdue,
         ];
 
+        // ── Security: Nexpose exposure (impact360 consumes nexposesync) ──
+        // Provider guard mirrors the Lifecycle precedent above. nexposesync uses
+        // legacy PluginNexposesync* class naming (no GlpiPlugin\ namespace), so
+        // the guard is class_exists('PluginNexposesyncExposure').
+        //
+        // forComputer() returns null when the host has NO Nexpose match — shown
+        // as grey "unknown", explicitly NOT "secure" (the unmatched-CI trap).
+        $security = null;
+        if (\Plugin::isPluginActive('nexposesync') && class_exists('PluginNexposesyncExposure')) {
+            $exp = \PluginNexposesyncExposure::forComputer($id);
+            if ($exp === null) {
+                // Never assessed by the sync — distinct from "checked, no match".
+                $security = [
+                    'level'  => 'unknown',
+                    'ok'     => null,
+                    'label'  => __('Security: not synced yet', 'impact360'),
+                    'detail' => __('Nexpose sync has not assessed this computer', 'impact360'),
+                ];
+            } elseif (($exp['match_status'] ?? 'matched') === 'unmatched') {
+                $security = [
+                    'level'  => 'unknown',
+                    'ok'     => null,
+                    'label'  => __('Security: no Nexpose match', 'impact360'),
+                    'detail' => __('Not found in Nexpose by hostname', 'impact360'),
+                ];
+            } else {
+                $crit = (int) $exp['critical'];
+                $sev  = (int) $exp['severe'];
+                $mod  = (int) $exp['moderate'];
+                $expl = (int) $exp['exploits'];
+
+                if ($crit > 0 || $expl > 0) {
+                    $level = 'bad';
+                    $label = __('Security: critical exposure', 'impact360');
+                } elseif ($sev > 0) {
+                    $level = 'warn';
+                    $label = __('Security: exposed', 'impact360');
+                } else {
+                    $level = 'ok';
+                    $label = __('Security: no critical vulns', 'impact360');
+                }
+
+                $parts = [];
+                if ($crit > 0) { $parts[] = sprintf(__('%d critical', 'impact360'), $crit); }
+                if ($sev  > 0) { $parts[] = sprintf(__('%d severe', 'impact360'), $sev); }
+                if ($mod  > 0) { $parts[] = sprintf(__('%d moderate', 'impact360'), $mod); }
+                if ($expl > 0) { $parts[] = sprintf(__('%d exploitable', 'impact360'), $expl); }
+                $detail = $parts !== [] ? implode(' · ', $parts) : __('No known vulnerabilities', 'impact360');
+
+                if (!empty($exp['last_scan'])) {
+                    $sdays = (int) floor((time() - strtotime((string) $exp['last_scan'])) / 86400);
+                    $sseen = $sdays <= 0
+                        ? __('today', 'impact360')
+                        : sprintf(_n('%d day ago', '%d days ago', $sdays, 'impact360'), $sdays);
+                    $detail .= ' — ' . __('scanned', 'impact360') . ' ' . $sseen;
+                } else {
+                    $detail .= ' — ' . __('never scanned', 'impact360');
+                }
+
+                if (($exp['match_status'] ?? 'matched') === 'ambiguous') {
+                    $detail .= ' · ' . __('ambiguous hostname match', 'impact360');
+                }
+
+                $security = [
+                    'level'  => $level,
+                    'ok'     => $level === 'ok' ? true : ($level === 'bad' ? false : null),
+                    'label'  => $label,
+                    'detail' => $detail,
+                ];
+            }
+        }
+
         // ── Health: only the signals enabled in the config count toward the
         //    roll-up, with configurable thresholds (Setup → Plugins → Impact360).
+        //    (Computed after the Security block so the vulns check can use it.)
         $checks = [];
         if ($hs['connectivity']) { $checks[] = $conn['ok'] === true; }              // agent seen recently
         if ($hs['antivirus'])    { $checks[] = $av['ok'] === true; }                // antivirus active
@@ -323,6 +398,11 @@ class ComputerDashboard extends CommonGLPI
         // retirement date ($retireDate !== null).
         if ($hs['retention'] && $retireDate !== null) {
             $checks[] = !$overdue;
+        }
+        // "No critical vulns" (nexposesync): only counted when there is a real
+        // signal — never-synced/unmatched computers are skipped, not failed.
+        if ($hs['vulns'] && $security !== null && ($security['level'] ?? 'unknown') !== 'unknown') {
+            $checks[] = $security['level'] !== 'bad';
         }
         $total   = count($checks);
         $passing = count(array_filter($checks));
@@ -437,6 +517,7 @@ class ComputerDashboard extends CommonGLPI
             'connectivity' => $conn,
             'antivirus'    => $av,
             'health'       => $health,
+            'security'     => $security,
 
             // ── Software summary ── (unlicensed/uptime not available natively)
             'software' => [

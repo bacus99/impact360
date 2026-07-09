@@ -187,6 +187,12 @@ class ImpactMapTab extends CommonGLPI
                         if ($a !== null && $a > 2) {
                             $why[] = sprintf(__('agent silent %d days', 'impact360'), (int) $a);
                         }
+                        $v = $w['vulns'] ?? null;
+                        if ($v === 'crit') {
+                            $why[] = __('critical vulns', 'impact360');
+                        } elseif ($v === 'warn') {
+                            $why[] = __('severe vulns', 'impact360');
+                        }
                         $tag = $why !== []
                             ? ' <span class="text-muted">('
                                 . htmlspecialchars(implode(', ', $why), ENT_QUOTES, 'UTF-8')
@@ -379,6 +385,10 @@ class ImpactMapTab extends CommonGLPI
             'health_ok'    => __('good', 'impact360'),
             'health_warn'  => __('warning', 'impact360'),
             'health_crit'  => __('critical', 'impact360'),
+            'vulns'        => __('Vulnerabilities', 'impact360'),
+            'vulns_ok'     => __('none critical', 'impact360'),
+            'vulns_warn'   => __('severe present', 'impact360'),
+            'vulns_crit'   => __('critical/exploitable', 'impact360'),
             'open_tickets' => __('Open tickets', 'impact360'),
             'agent_seen'   => __('Agent seen', 'impact360'),
             'today'        => __('today', 'impact360'),

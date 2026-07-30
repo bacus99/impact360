@@ -171,6 +171,84 @@ $num     = static fn($v) => $v === null ? '—' : (int) $v;
 
   </div>
 
+  <!-- CVE Exposure: combined Nexpose + Defender CVE table (top 10, full list via Export) -->
+  <?php if ($data['cves'] !== null):
+    $cveSeverity = static function (string $sev) use ($h): string {
+        $map = [
+            'critical' => '#d63939', 'severe' => '#f59f00', 'high' => '#f59f00',
+            'moderate' => '#f7c948', 'medium' => '#f7c948', 'low' => '#74b816',
+        ];
+        $color = $map[$sev] ?? '#6c757d';
+        $label = $sev !== '' ? ucfirst($sev) : __('Unknown', 'impact360');
+        return '<span class="uxc-pill" style="background:' . $color . ';color:#fff">' . $h($label) . '</span>';
+    };
+    $sourceLabels = ['nexpose' => __('Nexpose', 'impact360'), 'defender' => __('Defender', 'impact360')];
+    $allCves      = $data['cves']['items'];
+    $vulnCount    = count(array_filter($allCves, static fn($i) => $i['vulnerable']));
+    $shownCves    = array_slice($allCves, 0, 10);
+  ?>
+  <div class="uxc-card">
+    <div class="uxc-card-head uxc-cve-head">
+      <div class="uxc-card-title"><i class="ti ti-bug me-1"></i><?= __('CVE Exposure', 'impact360') ?>
+        <?php if (!empty($allCves)): ?>
+          <span class="uxc-muted"><?= sprintf(__('(%1$d open · %2$d total)', 'impact360'), $vulnCount, count($allCves)) ?></span>
+        <?php endif; ?>
+      </div>
+      <?php if (!empty($allCves)): ?>
+        <a class="uxc-btn uxc-btn-sm" href="<?= $h($data['cve_export_url']) ?>"><i class="ti ti-file-spreadsheet"></i> <?= __('Export to Excel', 'impact360') ?></a>
+      <?php endif; ?>
+    </div>
+    <?php if (empty($allCves)): ?>
+      <div class="uxc-muted"><i class="ti ti-shield-check me-1"></i><?= __('No known CVEs.', 'impact360') ?></div>
+    <?php else: ?>
+      <div class="uxc-table-wrap">
+        <table class="uxc-table">
+          <thead><tr>
+            <th><?= __('Severity', 'impact360') ?></th>
+            <th><?= __('CVE', 'impact360') ?></th>
+            <th><?= __('Title', 'impact360') ?></th>
+            <th><?= __('CVSS', 'impact360') ?></th>
+            <th><?= __('Exploit', 'impact360') ?></th>
+            <th><?= __('Source', 'impact360') ?></th>
+            <th><?= __('Status', 'impact360') ?></th>
+            <th><?= __('Last seen', 'impact360') ?></th>
+          </tr></thead>
+          <tbody>
+          <?php foreach ($shownCves as $row): ?>
+            <tr<?= !$row['vulnerable'] ? ' class="uxc-cve-remediated"' : '' ?>>
+              <td><?= $cveSeverity($row['severity']) ?></td>
+              <td><?= $h($row['cve']) ?></td>
+              <td><?= $h(mb_strimwidth($row['title'], 0, 60, '…')) ?></td>
+              <td><?= $row['cvss'] !== '' ? $h($row['cvss']) : '—' ?></td>
+              <td><?= $row['exploitable'] ? '<span class="uxc-pill" style="background:#ae3ec9;color:#fff">' . __('Yes', 'impact360') . '</span>' : '—' ?></td>
+              <td>
+                <?php foreach ($sourceLabels as $key => $label): ?>
+                  <?php if (isset($row['sources'][$key])): ?>
+                    <?php $url = $row['sources'][$key]; ?>
+                    <?= $url !== null
+                        ? '<a class="uxc-tag" style="text-decoration:none;color:inherit" href="' . $h($url) . '">' . $h($label) . '</a>'
+                        : '<span class="uxc-tag">' . $h($label) . '</span>' ?>
+                  <?php endif; ?>
+                <?php endforeach; ?>
+              </td>
+              <td><?= $row['vulnerable']
+                    ? '<span class="uxc-pill" style="background:#d63939;color:#fff">' . __('Vulnerable', 'impact360') . '</span>'
+                    : '<span class="uxc-pill" style="background:#2fb344;color:#fff">' . __('Remediated', 'impact360') . '</span>' ?></td>
+              <td><?= $fmtDate($row['last_seen']) ?></td>
+            </tr>
+          <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+      <?php if (count($allCves) > 10): ?>
+        <div class="uxc-muted uxc-cve-more">
+          <?= sprintf(__('Showing top 10 of %d — use Export to Excel for the full list.', 'impact360'), count($allCves)) ?>
+        </div>
+      <?php endif; ?>
+    <?php endif; ?>
+  </div>
+  <?php endif; ?>
+
   <!-- Recent activity timeline -->
   <?php if (!empty($data['activity'])): ?>
   <div class="uxc-card uxc-activity">

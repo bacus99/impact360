@@ -385,6 +385,13 @@ class ComputerDashboard extends CommonGLPI
             }
         }
 
+        // ── CVE Exposure: combined per-computer CVE table (Nexpose + Defender) ──
+        // Unlike the $security aggregate above (Nexpose-only counts), this reads
+        // both plugins' vulnerability catalogs directly to build the actual CVE
+        // list — impact360's cross-cutting view, so a machine's full CVE
+        // exposure doesn't require checking two separate native tabs.
+        $cves = self::gatherCves($id);
+
         // ── Health: only the signals enabled in the config count toward the
         //    roll-up, with configurable thresholds (Setup → Plugins → Impact360).
         //    (Computed after the Security block so the vulns check can use it.)
@@ -518,6 +525,8 @@ class ComputerDashboard extends CommonGLPI
             'antivirus'    => $av,
             'health'       => $health,
             'security'     => $security,
+            'cves'         => $cves,
+            'cve_export_url' => $CFG_GLPI['root_doc'] . '/plugins/impact360/front/cve_export.php?computers_id=' . $id,
 
             // ── Software summary ── (unlicensed/uptime not available natively)
             'software' => [
@@ -540,6 +549,167 @@ class ComputerDashboard extends CommonGLPI
             'hardware'  => $hw,
             'volumes'   => $volumes,
             'activity'  => $activity,
+        ];
+    }
+
+    /**
+     * Combined per-computer CVE table: unions the Nexpose and Defender
+     * vulnerability catalogs (soft dependency on each, mirrors the $security
+     * block in gatherData()). PluginXExposure::forComputer() only exposes
+     * aggregate counts, so this reads the join tables directly to get the
+     * actual CVE list.
+     *
+     * Returns null when neither provider is active — nothing to show at all
+     * (distinct from an empty 'items' list, which means "checked, no CVEs").
+     *
+     * Public: also called directly by front/cve_export.php (the "Export to
+     * Excel" button on the Dashboard tab only shows the top 10; the export
+     * needs the full list).
+     *
+     * @return array{active:array{nexpose:bool,defender:bool},items:array<int,array<string,mixed>>}|null
+     */
+    public static function gatherCves(int $id): ?array
+    {
+        global $DB;
+
+        $active = [
+            'nexpose'  => \Plugin::isPluginActive('nexposesync') && class_exists('PluginNexposesyncVulnerability'),
+            'defender' => \Plugin::isPluginActive('defendersync') && class_exists('PluginDefendersyncVulnerability'),
+        ];
+        if (!$active['nexpose'] && !$active['defender']) {
+            return null;
+        }
+
+        $found = [];
+
+        if ($active['nexpose']
+            && $DB->tableExists('glpi_plugin_nexposesync_vulnerabilities')
+            && $DB->tableExists('glpi_plugin_nexposesync_vulnerabilities_items')) {
+            try {
+                $canLink = \Session::haveRight('plugin_nexposesync_vulnerability', READ);
+                foreach ($DB->request([
+                    'SELECT'     => [
+                        'v.id AS vuln_id', 'v.cve', 'v.title', 'v.severity', 'v.cvss', 'v.exploitable',
+                        'i.status', 'i.first_seen', 'i.last_seen',
+                    ],
+                    'FROM'       => 'glpi_plugin_nexposesync_vulnerabilities_items AS i',
+                    'INNER JOIN' => ['glpi_plugin_nexposesync_vulnerabilities AS v' => [
+                        'ON' => ['v' => 'id', 'i' => 'plugin_nexposesync_vulnerabilities_id'],
+                    ]],
+                    'WHERE' => ['i.itemtype' => 'Computer', 'i.items_id' => $id],
+                ]) as $r) {
+                    $url = $canLink ? \PluginNexposesyncVulnerability::getFormURLWithID((int) $r['vuln_id']) : null;
+                    $found[] = self::normalizeCveRow('nexpose', $r, $url);
+                }
+            } catch (\Throwable $e) { /* keep whatever else was gathered */ }
+        }
+
+        if ($active['defender']
+            && $DB->tableExists('glpi_plugin_defendersync_vulnerabilities')
+            && $DB->tableExists('glpi_plugin_defendersync_vulnerabilities_items')) {
+            try {
+                $canLink = \Session::haveRight('plugin_defendersync_vulnerability', READ);
+                foreach ($DB->request([
+                    'SELECT'     => [
+                        'v.id AS vuln_id', 'v.cve', 'v.title', 'v.severity', 'v.cvss', 'v.exploitable',
+                        'i.status', 'i.first_seen', 'i.last_seen',
+                    ],
+                    'FROM'       => 'glpi_plugin_defendersync_vulnerabilities_items AS i',
+                    'INNER JOIN' => ['glpi_plugin_defendersync_vulnerabilities AS v' => [
+                        'ON' => ['v' => 'id', 'i' => 'plugin_defendersync_vulnerabilities_id'],
+                    ]],
+                    'WHERE' => ['i.itemtype' => 'Computer', 'i.items_id' => $id],
+                ]) as $r) {
+                    $url = $canLink ? \PluginDefendersyncVulnerability::getFormURLWithID((int) $r['vuln_id']) : null;
+                    $found[] = self::normalizeCveRow('defender', $r, $url);
+                }
+            } catch (\Throwable $e) { /* keep whatever else was gathered */ }
+        }
+
+        // Merge same CVE across sources — a host can be flagged by both
+        // scanners for the same underlying vulnerability.
+        $rank   = ['critical' => 4, 'severe' => 3, 'high' => 3, 'moderate' => 2, 'medium' => 2, 'low' => 1];
+        $merged = [];
+        foreach ($found as $r) {
+            $key = $r['cve'];
+            if ($key === null) {
+                continue;   // finding has no CVE identifier — out of scope for this table
+            }
+            if (!isset($merged[$key])) {
+                $merged[$key] = $r;
+                $merged[$key]['sources'] = [];
+            }
+            $m = &$merged[$key];
+
+            if (($rank[$r['severity']] ?? 0) > ($rank[$m['severity']] ?? 0)) {
+                $m['severity'] = $r['severity'];
+            }
+            if ((float) $r['cvss'] > (float) $m['cvss']) {
+                $m['cvss'] = $r['cvss'];
+            }
+            $m['exploitable'] = $m['exploitable'] || $r['exploitable'];
+            if ($r['vulnerable']) {
+                $m['vulnerable'] = true;
+            }
+            if ($m['first_seen'] === null || ($r['first_seen'] !== null && $r['first_seen'] < $m['first_seen'])) {
+                $m['first_seen'] = $r['first_seen'];
+            }
+            if ($m['last_seen'] === null || ($r['last_seen'] !== null && $r['last_seen'] > $m['last_seen'])) {
+                $m['last_seen'] = $r['last_seen'];
+            }
+            if (!isset($m['sources'][$r['source']])) {
+                $m['sources'][$r['source']] = $r['url'];
+            }
+            unset($m);
+        }
+
+        $items = array_values($merged);
+        usort($items, static function (array $a, array $b) use ($rank): int {
+            if ($a['vulnerable'] !== $b['vulnerable']) {
+                return $b['vulnerable'] <=> $a['vulnerable'];
+            }
+            // CVSS is the primary ranking within each vulnerable/remediated
+            // group — more granular than the severity label, which only
+            // breaks ties when CVSS is equal or missing on both sides.
+            $ca = (float) $a['cvss'];
+            $cb = (float) $b['cvss'];
+            if ($ca !== $cb) {
+                return $cb <=> $ca;
+            }
+            $ra = $rank[$a['severity']] ?? 0;
+            $rb = $rank[$b['severity']] ?? 0;
+            if ($ra !== $rb) {
+                return $rb <=> $ra;
+            }
+            return strcmp((string) $b['last_seen'], (string) $a['last_seen']);
+        });
+
+        return ['active' => $active, 'items' => $items];
+    }
+
+    /**
+     * Normalize one Nexpose/Defender vulnerability-catalog join row into the
+     * shape gatherCves() merges on. $source is 'nexpose' or 'defender'.
+     * Findings without a real CVE identifier are marked (cve = null) and
+     * dropped by the caller — this table is CVE-scoped by design.
+     *
+     * @param array<string,mixed> $r
+     */
+    private static function normalizeCveRow(string $source, array $r, ?string $url): array
+    {
+        $cve = strtoupper(trim((string) ($r['cve'] ?? '')));
+
+        return [
+            'source'      => $source,
+            'cve'         => preg_match('/^CVE-\d{4}-\d+$/', $cve) ? $cve : null,
+            'title'       => trim((string) ($r['title'] ?? '')),
+            'severity'    => strtolower(trim((string) ($r['severity'] ?? ''))),
+            'cvss'        => trim((string) ($r['cvss'] ?? '')),
+            'exploitable' => !empty($r['exploitable']),
+            'vulnerable'  => ((string) ($r['status'] ?? '')) === 'vulnerable',
+            'first_seen'  => $r['first_seen'] ?? null,
+            'last_seen'   => $r['last_seen'] ?? null,
+            'url'         => $url,
         ];
     }
 }

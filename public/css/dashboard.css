@@ -200,6 +200,49 @@
 .uxc-ci-detail .uxc-bar-warn { background: var(--uxc-warn); }
 .uxc-ci-detail .uxc-bar-bad  { background: var(--uxc-bad); }
 
+/* ── CVE Exposure table — styled entirely with our own tokens (not Bootstrap's
+   .table-striped, whose CSS vars clash with this card's dark/light theming and
+   washed rows out to near-invisible text) ── */
+.uxc-ci-detail .uxc-table-wrap { overflow-x: auto; }
+.uxc-ci-detail .uxc-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }
+.uxc-ci-detail .uxc-table th {
+    text-align: left; padding: 0.6rem 1.25rem 0.6rem 0.25rem; white-space: nowrap;
+    font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+    color: var(--uxc-muted); border-bottom: 1px solid var(--uxc-line);
+}
+.uxc-ci-detail .uxc-table td {
+    padding: 0.6rem 1.25rem 0.6rem 0.25rem; color: var(--uxc-fg); border-bottom: 1px solid var(--uxc-line); vertical-align: middle;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* Fixed per-column widths (table-layout:fixed needs them) — Severity, CVE,
+   Title, CVSS, Exploit, Source, Status, Last seen. Title gets the lion's
+   share; without this the browser stretches one column to fill 100% width,
+   leaving a huge blank gap after the (already truncated) text. */
+.uxc-ci-detail .uxc-table th:nth-child(1), .uxc-ci-detail .uxc-table td:nth-child(1) { width: 8%; }
+.uxc-ci-detail .uxc-table th:nth-child(2), .uxc-ci-detail .uxc-table td:nth-child(2) { width: 12%; }
+.uxc-ci-detail .uxc-table th:nth-child(3), .uxc-ci-detail .uxc-table td:nth-child(3) { width: 30%; }
+.uxc-ci-detail .uxc-table th:nth-child(4), .uxc-ci-detail .uxc-table td:nth-child(4) { width: 7%; }
+.uxc-ci-detail .uxc-table th:nth-child(5), .uxc-ci-detail .uxc-table td:nth-child(5) { width: 8%; }
+.uxc-ci-detail .uxc-table th:nth-child(6), .uxc-ci-detail .uxc-table td:nth-child(6) { width: 15%; }
+.uxc-ci-detail .uxc-table th:nth-child(7), .uxc-ci-detail .uxc-table td:nth-child(7) { width: 10%; }
+.uxc-ci-detail .uxc-table th:nth-child(8), .uxc-ci-detail .uxc-table td:nth-child(8) { width: 10%; }
+.uxc-ci-detail .uxc-table tbody tr:nth-child(even) { background: var(--uxc-card-2); }
+.uxc-ci-detail .uxc-table tbody tr:hover { background: var(--uxc-line); }
+.uxc-ci-detail .uxc-table tr.uxc-cve-remediated { opacity: 0.55; }
+.uxc-ci-detail .uxc-pill { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; white-space: nowrap; }
+.uxc-ci-detail .uxc-table td .uxc-tag { margin-right: 0.35rem; }
+.uxc-ci-detail .uxc-cve-more { margin-top: 0.6rem; font-size: 0.8rem; }
+
+/* CVE card header: title truly centered (button, if present, pinned right).
+   Selector combines both classes on one element (3 classes vs. 2 for the
+   base .uxc-card-head rule) so this reliably outranks it regardless of
+   stylesheet order. */
+.uxc-ci-detail .uxc-card-head.uxc-cve-head {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem;
+}
+.uxc-ci-detail .uxc-cve-head .uxc-card-title { grid-column: 2; text-align: center; margin-bottom: 0; }
+.uxc-ci-detail .uxc-cve-head .uxc-btn { grid-column: 3; justify-self: end; }
+
 /* ── Activity timeline ── */
 .uxc-ci-detail .uxc-activity { /* outer spacing handled by .uxc-ci-detail flex gap */ }
 .uxc-ci-detail .uxc-timeline { list-style: none; margin: 0; padding: 0; }

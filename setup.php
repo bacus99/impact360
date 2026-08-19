@@ -19,10 +19,11 @@
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Impact360\ComputerDashboard;
 use GlpiPlugin\Impact360\ConfigMenu;
+use GlpiPlugin\Impact360\CveMenu;
 use GlpiPlugin\Impact360\ImpactMapTab;
 use GlpiPlugin\Impact360\Menu;
 
-define('PLUGIN_IMPACT360_VERSION',          '1.1.1');
+define('PLUGIN_IMPACT360_VERSION',          '1.2.0');
 define('PLUGIN_IMPACT360_MIN_GLPI_VERSION', '11.0.0');
 define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.0.99');
 
@@ -37,10 +38,13 @@ function plugin_init_impact360(): void
     // menu entry (menu_toadd 'config' → ConfigMenu). Enforces config UPDATE.
     $PLUGIN_HOOKS['config_page']['impact360'] = 'front/config.php';
 
-    // Menu entries: Application Health board under the top-level Plugins menu
-    // (its own root entry, not nested under Assets); settings under Setup.
+    // Menu entries: Application Health board + CVE Exposure board, both under
+    // the top-level Plugins menu (their own root entries, not nested under
+    // Assets); settings under Setup. 'plugins' accepts an array of classes —
+    // verified against GLPI 11.0.8's Html::generateMenuSession(), which does
+    // `if (is_array($val)) { foreach ($val as $object) { $menu[$key]['types'][] = $object; } }`.
     $PLUGIN_HOOKS['menu_toadd']['impact360'] = [
-        'plugins' => Menu::class,
+        'plugins' => [Menu::class, CveMenu::class],
         'config'  => ConfigMenu::class,
     ];
 

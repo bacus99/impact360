@@ -1,0 +1,78 @@
+/*
+ * Impact360 - CVE lookup styles.
+ * Scoped under .uxc-cve-board (NOT dashboard.css — that file's .uxc-table
+ * column widths are hardcoded nth-child percentages for its fixed 8-column
+ * per-computer table; this has a different column count, so it needs its
+ * own scope). Same --uxc-* token set as dashboard.css:8-34, copied rather
+ * than shared so each file stays self-contained.
+ */
+
+.uxc-cve-board {
+    --uxc-bg:      #1f2329;
+    --uxc-card:    #2a2f37;
+    --uxc-card-2:  #20242b;
+    --uxc-fg:      #e9ecef;
+    --uxc-muted:   #9aa4b2;
+    --uxc-line:    #3a414b;
+    --uxc-ok:      #2fb344;
+    --uxc-bad:     #e5546a;
+    --uxc-warn:    #f1a531;
+
+    color: var(--uxc-fg);
+}
+:root[data-bs-theme="light"] .uxc-cve-board {
+    --uxc-bg:     #f5f5f5;
+    --uxc-card:   #ffffff;
+    --uxc-card-2: #f1f3f5;
+    --uxc-fg:     #1a2129;
+    --uxc-muted:  #5b6675;
+    --uxc-line:   #e3e6ea;
+}
+
+.uxc-cve-board h2 { color: var(--tblr-body-color, #1a2129); }
+.uxc-cve-board .uxc-muted { color: var(--uxc-muted); }
+
+/* ── Cards (filter bar + table wrapper) ── */
+.uxc-cve-board .uxc-card {
+    background: var(--uxc-card); border: 1px solid var(--uxc-line);
+    border-radius: 10px; padding: 1rem;
+}
+.uxc-cve-board .uxc-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+.uxc-cve-board .uxc-card-title { font-weight: 600; }
+
+/* ── Buttons/pills (match dashboard.css's vocabulary) ── */
+.uxc-cve-board .uxc-btn {
+    display: inline-flex; align-items: center; gap: 0.3rem;
+    padding: 0.3rem 0.75rem; border-radius: 6px;
+    background: var(--uxc-card-2); border: 1px solid var(--uxc-line);
+    color: var(--uxc-fg); text-decoration: none; font-size: 0.85rem;
+}
+.uxc-cve-board .uxc-btn:hover { background: var(--uxc-line); color: var(--uxc-fg); }
+.uxc-cve-board .uxc-btn-sm { padding: 0.2rem 0.6rem; font-size: 0.8rem; }
+
+/* ── Table ── */
+.uxc-cve-board .uxc-table-wrap { overflow-x: auto; }
+.uxc-cve-board .uxc-table {
+    width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.85rem;
+}
+.uxc-cve-board .uxc-table th {
+    text-align: left; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.03em; font-size: 0.72rem; padding: 0.5rem 0.6rem;
+    color: var(--uxc-muted); border-bottom: 1px solid var(--uxc-line);
+    white-space: nowrap;
+}
+.uxc-cve-board .uxc-table td {
+    padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--uxc-line); vertical-align: middle;
+}
+.uxc-cve-board .uxc-table tbody tr:nth-child(even) { background: var(--uxc-card-2); }
+.uxc-cve-board .uxc-table tbody tr:hover { background: var(--uxc-line); }
+.uxc-cve-board .uxc-table a { color: var(--tblr-link-color, #467fcf); }
+
+/* Per-source Yes/No columns, centered (Asset + Type stay left-aligned). */
+.uxc-cve-board .uxc-cve-assets th:not(:first-child):not(:nth-child(2)),
+.uxc-cve-board .uxc-cve-assets td:not(:first-child):not(:nth-child(2)) { text-align: center; }
+.uxc-cve-board .uxc-cve-assets .uxc-src-yes { color: var(--uxc-ok); font-weight: 600; }
+.uxc-cve-board .uxc-cve-assets .uxc-src-no  { color: var(--uxc-muted); opacity: 0.6; }

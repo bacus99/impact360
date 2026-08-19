@@ -10,6 +10,7 @@
  * @license   GPL-3.0-or-later
  */
 
+use GlpiPlugin\Impact360\Config;
 use GlpiPlugin\Impact360\ComputerDashboard;
 
 include('../../../inc/includes.php');
@@ -40,6 +41,12 @@ if (isset($_POST['save_health'])) {
     Html::redirect($CFG_GLPI['root_doc'] . '/plugins/impact360/front/config.php');
 }
 
+if (isset($_POST['save_modules'])) {
+    Config::setModuleEnabled('cve', isset($_POST['chk_module_cve']));
+    Session::addMessageAfterRedirect(__('Module settings saved.', 'impact360'), true, INFO);
+    Html::redirect($CFG_GLPI['root_doc'] . '/plugins/impact360/front/config.php');
+}
+
 Html::header(__('Impact360', 'impact360'), $_SERVER['PHP_SELF'], 'config', 'plugins');
 
 $hs   = ComputerDashboard::healthSettings();
@@ -64,6 +71,24 @@ echo '<i class="ti ti-heart-rate-monitor me-2" style="font-size:1.5rem"></i>';
 echo '<h2 class="m-0">' . __('Computer Dashboard — health checks', 'impact360') . '</h2>';
 echo '</div>';
 echo '<p class="text-muted">' . __('Pick which signals count toward a computer\'s health roll-up, and set their thresholds. Disabled checks are ignored (not counted as failing).', 'impact360') . '</p>';
+
+// ── Modules ──────────────────────────────────────────────────────────────
+echo '<form method="post" action="' . htmlspecialchars($self, ENT_QUOTES, 'UTF-8') . '" class="mb-3">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="'
+    . htmlspecialchars(Session::getNewCSRFToken(), ENT_QUOTES, 'UTF-8') . '">';
+echo '<input type="hidden" name="save_modules" value="1">';
+echo '<div class="card"><div class="card-body">';
+echo '<h5 class="mb-3">' . __('Modules', 'impact360') . '</h5>';
+echo '<div class="form-check form-switch mb-2">';
+echo '<input class="form-check-input" type="checkbox" role="switch" id="chk_module_cve" name="chk_module_cve"'
+    . (Config::isModuleEnabled('cve') ? ' checked' : '') . '>';
+echo '<label class="form-check-label" for="chk_module_cve">'
+    . htmlspecialchars(__('CVE Exposure board (Plugins → CVE Exposure)', 'impact360'), ENT_QUOTES, 'UTF-8')
+    . '</label></div>';
+echo '<button type="submit" class="btn btn-primary btn-sm mt-2">'
+    . '<i class="ti ti-device-floppy me-1"></i>' . __('Save', 'impact360') . '</button>';
+echo '</div></div>'; // card
+echo '</form>';
 
 echo '<form method="post" action="' . htmlspecialchars($self, ENT_QUOTES, 'UTF-8') . '">';
 echo '<input type="hidden" name="_glpi_csrf_token" value="'

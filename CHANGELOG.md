@@ -5,6 +5,43 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-08-19
+
+### Added
+- **"CVE Exposure" lookup** (`front/cve.php`, Plugins → CVE Exposure) — enter
+  a CVE id, see every **Computer** currently open (vulnerable) for it, with a
+  per-source Yes/No column across **all three** security scanners (Armis,
+  Nexpose, Defender). Membership isn't uniform (a computer may be
+  Nexpose+Defender, another Defender only), so this is a per-asset,
+  per-source view, not a single count.
+- **`src/CveExposure.php`** — the data layer. A `SOURCES` registry describes
+  each scanner's tables/rights. `assetsFor($cve)` runs one plain indexed
+  equality lookup per usable source (`v.cve = ?`, `KEY cve` on the catalog
+  table), merged in PHP — no UNION, no GROUP BY. A session missing a source's
+  right never sees that source's data at all (fail-closed), not just a
+  hidden column.
+  - *Originally shipped as a fleet-wide "every CVE, one row each" aggregate
+    (`COUNT`/`GROUP BY` over a `QueryUnion` of all three sources). That hit
+    MySQL error 1114 ("the table is full" on an on-disk temp table) in
+    production — a single widespread CVE touched 5,700+ assets, and grouping
+    across the whole catalog needed more temp-table capacity than the server
+    has. The aggregate was removed rather than left in place unused.*
+  - **Deliberately reduced scope, current state:** itemtype restricted to
+    `Computer` only (`CveExposure::ITEMTYPE_SCOPE`); no entity scoping
+    applied (`getEntitiesRestrictCriteria` was dropped) — every visible
+    computer shows regardless of the session's active entities. Both are
+    explicit, requested trade-offs — see the class docblock.
+- **`front/cve_fleet_export.php`** — CSV export of the same lookup (one row
+  per computer, per-source Yes/No), mirroring the existing per-computer
+  `cve_export.php`.
+- New **Plugins → CVE Exposure** menu entry (`src/CveMenu.php`), gated on
+  holding READ on at least one scanner's right.
+- New module toggle **`cve`** (Setup → Impact360 → Modules), defaulting on.
+
+(The per-computer CVE table on the Computer Dashboard tab,
+`ComputerDashboard::gatherCves()`, is unchanged — it still unions Nexpose +
+Defender only, scoped to one Computer.)
+
 ## [1.0.0] - 2026-06-30
 
 Initial release — extracted from **uxcustomizer** (the Impact Map module, the

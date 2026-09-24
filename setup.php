@@ -25,13 +25,17 @@ use GlpiPlugin\Impact360\Menu;
 
 define('PLUGIN_IMPACT360_VERSION',          '1.2.0');
 define('PLUGIN_IMPACT360_MIN_GLPI_VERSION', '11.0.0');
-define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.0.99');
+define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.99.99');
 
 function plugin_init_impact360(): void
 {
     global $PLUGIN_HOOKS;
 
-    $PLUGIN_HOOKS[Hooks::CSRF_COMPLIANT]['impact360'] = true;
+    // Literal key, not Hooks::CSRF_COMPLIANT: GLPI 12 removed that
+    // constant, and referencing it is a fatal at plugin load (it
+    // surfaces as the misleading "function plugin_<slug>_install is
+    // missing"). GLPI 11 and 12 both read the string key identically.
+    $PLUGIN_HOOKS['csrf_compliant']['impact360'] = true;
 
     // Settings page — Computer Dashboard health-check configuration. Reachable
     // both as the wrench icon on Setup → Plugins (config_page) and as a Setup

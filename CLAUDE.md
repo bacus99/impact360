@@ -15,7 +15,7 @@ Impact360 is the **CI insight + dependency/impact** plugin for GLPI 11, split ou
 - **Observed-traffic overlay** — optional, reads the `netstatconnections` plugin's tables (real TCP/UDP dependencies). **Soft dependency:** `tableExists`-guarded, a clean no-op when that plugin isn't installed.
 - **Computer Dashboard tab** — CI insight on the Computer form (connectivity, antivirus, health checks, software/hardware/lifecycle). Moved here from uxcustomizer because it shares the health concept with the impact roll-up.
 - **CVE Exposure lookup** (`front/cve.php`) — enter a CVE id, see every **asset** currently open (vulnerable) for it, across every itemtype the scanners cover (Computer, NetworkEquipment, Phone, Printer, OT/custom asset types), with a per-source Yes/No column across all three security-scanner plugins (Armis, Nexpose, Defender) and a Type column since rows aren't all Computers. Membership isn't uniform across sources. Distinct from the per-computer CVE table on the Dashboard tab (`ComputerDashboard::gatherCves()`), which only unions Nexpose + Defender and is scoped to one Computer.
-  ⚠ **History (2026-08-19, see `CveExposure.php`'s class docblock):** this started as a fleet-wide "every CVE, one row each" aggregate (`COUNT`/`GROUP BY` over a `QueryUnion`), which hit MySQL error 1114 ("table full" on an on-disk temp table) in production at real data volume (one CVE alone touching 5,700+ assets). That aggregate was **removed entirely** (not left in place unused) — the tool now only looks up one CVE at a time (`CveExposure::assetsFor()`), a set of plain indexed equality lookups with no UNION/GROUP BY, which is also why full itemtype coverage could be restored without reintroducing that risk. It does **not** apply entity scoping (`getEntitiesRestrictCriteria` was dropped) — every visible asset shows regardless of the session's active entities. That remains a deliberate, requested trade-off.
+  ⚠ **History (2026-08-19, see `CveExposure.php`'s class docblock):** this started as a fleet-wide "every CVE, one row each" aggregate (`COUNT`/`GROUP BY` over a `QueryUnion`), which hit MySQL error 1114 ("table full" on an on-disk temp table) in production at real data volume (one CVE alone touching 5,700+ assets). That aggregate was **removed entirely** (not left in place unused) — the tool now only looks up one CVE at a time (`CveExposure::assetsFor()`), per source, an index-backed `GROUP BY itemtype` (on `KEY item (itemtype, items_id)`) to discover itemtypes, then one indexed equality lookup per (source, itemtype), with no UNION and no aggregate across the whole catalog, which is also why full itemtype coverage could be restored without reintroducing that risk. It does **not** apply entity scoping (`getEntitiesRestrictCriteria` was dropped) — every visible asset shows regardless of the session's active entities. That remains a deliberate, requested trade-off.
 
 ## Architecture
 
@@ -27,14 +27,14 @@ impact360/
 │   ├── ImpactMap.php         data layer: graph build, BFS, roll-up, portfolio, netstat overlay
 │   ├── ImpactMapTab.php      the "Impact Map" tab (Computer/Appliance/ITIL) + Appliance roll-up banner
 │   ├── ComputerDashboard.php "Dashboard" tab on Computer (CI insight; shares the health concept)
-│   ├── CveExposure.php       CVE lookup data layer: per-CVE Armis/Nexpose/Defender computer lookup (assetsFor())
+│   ├── CveExposure.php       CVE lookup data layer: per-CVE Armis/Nexpose/Defender asset lookup (assetsFor())
 │   ├── Menu.php              Plugins → "Application Health" board entry
 │   ├── CveMenu.php           Plugins → "CVE Exposure" entry
 │   └── Config.php            key/value store: dashboard health settings + module toggles
 ├── front/config.php          health-check + module-toggle settings page (Setup → Plugins → Impact360)
 ├── ajax/impactmap.php        graph JSON endpoint (GET, entity-scoped, rights-checked)
 ├── front/portfolio.php       Application Health board ("wall of apps")
-├── front/cve.php             CVE Exposure lookup (one CVE → affected computers)
+├── front/cve.php             CVE Exposure lookup (one CVE → affected assets)
 ├── front/cve_export.php          per-computer CVE CSV export (Dashboard tab)
 ├── front/cve_fleet_export.php    CVE Exposure lookup CSV export
 ├── templates/computer_dashboard.html.php   Computer Dashboard view

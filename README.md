@@ -24,11 +24,13 @@ roll-up, an Application Health board, and an optional observed-traffic overlay.
   dependencies are overlaid on the map (dashed = observed-only, solid =
   confirmed in native impact), labelled by port and weighted by frequency.
 
-Read-only and entity-scoped throughout.
+Read-only throughout, and entity-scoped everywhere except the CVE Exposure
+lookup, which by design lists every visible asset regardless of the active
+entities.
 
 ## Requirements
 
-- GLPI `~11.0.0`
+- GLPI `11.x` (`>= 11.0.0`, `< 12.0.0`)
 - PHP `>= 8.1`
 - *(optional)* the `netstatconnections` plugin for the observed-traffic overlay.
 

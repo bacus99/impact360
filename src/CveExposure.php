@@ -19,9 +19,12 @@
  * assets, and grouping across the whole catalog needed more temp-table
  * capacity than the server has. The aggregate has been removed rather than
  * left in place unused; what's left is exactly what's needed: look up ONE
- * CVE at a time. Each per-source query below is a plain indexed equality
- * lookup (`v.cve = ?`, `KEY cve` on the catalog table) with no UNION and no
- * GROUP BY, so it doesn't hit the same temp-table ceiling — which is also
+ * CVE at a time. Per source, itemtypesFor() runs a `GROUP BY itemtype`
+ * that reads `KEY item (itemtype, items_id)`, so it needs no temp table.
+ * Then one indexed equality lookup runs per (source, itemtype) pair
+ * (`v.cve = ?`, `KEY cve` on the catalog table). There is no UNION and no
+ * aggregate across the whole catalog, so it doesn't hit the same
+ * temp-table ceiling — which is also
  * why itemtype coverage could be restored to every itemtype the scanners
  * report on (not just Computer) without reintroducing that risk.
  *

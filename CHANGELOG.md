@@ -5,19 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-10-01
+
+### Changed
+- **GLPI compatibility widened to all of 11.x**: `PLUGIN_IMPACT360_MAX_GLPI_VERSION`
+  goes from `11.0.99` to `11.99.99`, so the plugin now installs on 11.1+.
+  GLPI 12 is still out of range until it has been tested.
+- **CSRF hook registered with the literal `'csrf_compliant'` key** instead of
+  `Hooks::CSRF_COMPLIANT`. GLPI 12 removes that constant, and referencing it
+  is a fatal error at plugin load, which shows up as the misleading
+  "function plugin_impact360_install is missing". GLPI 11 reads the string key
+  the same way, so nothing changes on 11.x.
+
+### Fixed
+- The 1.2.0 CHANGELOG entry below wrongly said the CVE Exposure lookup was
+  limited to Computers. As committed in 1.2.0 (`5798f65`), it already covered every itemtype the
+  scanners report on. The entry has been corrected; the code is unchanged.
+
 ## [1.2.0] - 2026-08-19
 
 ### Added
 - **"CVE Exposure" lookup** (`front/cve.php`, Plugins → CVE Exposure) — enter
-  a CVE id, see every **Computer** currently open (vulnerable) for it, with a
-  per-source Yes/No column across **all three** security scanners (Armis,
-  Nexpose, Defender). Membership isn't uniform (a computer may be
-  Nexpose+Defender, another Defender only), so this is a per-asset,
-  per-source view, not a single count.
+  a CVE id, see every **asset** currently open (vulnerable) for it, across
+  every itemtype the scanners cover (Computer, NetworkEquipment, Phone,
+  Printer, OT/custom asset types), with a Type column and a per-source Yes/No
+  column across **all three** security scanners (Armis, Nexpose, Defender).
+  Membership isn't uniform (an asset may be Nexpose+Defender, another
+  Defender only), so this is a per-asset, per-source view, not a single count.
 - **`src/CveExposure.php`** — the data layer. A `SOURCES` registry describes
-  each scanner's tables/rights. `assetsFor($cve)` runs one plain indexed
-  equality lookup per usable source (`v.cve = ?`, `KEY cve` on the catalog
-  table), merged in PHP — no UNION, no GROUP BY. A session missing a source's
+  each scanner's tables/rights. For each usable source, `assetsFor($cve)`
+  first finds which itemtypes are present with a `GROUP BY itemtype` on the
+  findings table. That query reads `KEY item (itemtype, items_id)`, so it
+  needs no temp table. It then runs one indexed equality lookup per
+  (source, itemtype) pair (`v.cve = ?`, `KEY cve` on the catalog table) and
+  merges the results in PHP. There is no UNION and no aggregate across the
+  whole catalog. A session missing a source's
   right never sees that source's data at all (fail-closed), not just a
   hidden column.
   - *Originally shipped as a fleet-wide "every CVE, one row each" aggregate
@@ -26,13 +48,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     production — a single widespread CVE touched 5,700+ assets, and grouping
     across the whole catalog needed more temp-table capacity than the server
     has. The aggregate was removed rather than left in place unused.*
-  - **Deliberately reduced scope, current state:** itemtype restricted to
-    `Computer` only (`CveExposure::ITEMTYPE_SCOPE`); no entity scoping
-    applied (`getEntitiesRestrictCriteria` was dropped) — every visible
-    computer shows regardless of the session's active entities. Both are
-    explicit, requested trade-offs — see the class docblock.
+  - Because every query is index-backed, it could cover every itemtype
+    without bringing that temp-table risk back. Itemtypes found in the
+    findings table are filtered by `class_exists`, `canView()` and whether
+    they resolve to a table.
+  - **Deliberately reduced scope:** no entity scoping
+    (`getEntitiesRestrictCriteria` was dropped) — every visible asset shows
+    regardless of the session's active entities. This is an explicit,
+    requested trade-off — see the class docblock.
 - **`front/cve_fleet_export.php`** — CSV export of the same lookup (one row
-  per computer, per-source Yes/No), mirroring the existing per-computer
+  per asset, per-source Yes/No), mirroring the existing per-computer
   `cve_export.php`.
 - New **Plugins → CVE Exposure** menu entry (`src/CveMenu.php`), gated on
   holding READ on at least one scanner's right.

@@ -23,7 +23,7 @@ use GlpiPlugin\Impact360\CveMenu;
 use GlpiPlugin\Impact360\ImpactMapTab;
 use GlpiPlugin\Impact360\Menu;
 
-define('PLUGIN_IMPACT360_VERSION',          '1.2.0');
+define('PLUGIN_IMPACT360_VERSION',          '1.2.1');
 define('PLUGIN_IMPACT360_MIN_GLPI_VERSION', '11.0.0');
 define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.99.99');
 

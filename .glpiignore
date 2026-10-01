@@ -9,6 +9,7 @@
 .vscode
 .claude
 CLAUDE.md
+glpi_plugin_future_enhancements.md
 .editorconfig
 *.swp
 *~

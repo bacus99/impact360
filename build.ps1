@@ -44,10 +44,11 @@ New-Item -ItemType Directory -Path $dist -Force | Out-Null
 $xd = @()
 $xf = @()
 foreach ($p in $ignore) {
+    # A bare name can be a file or a directory (.git, .github, .claude are
+    # dirs despite the dot), so exclude it both ways. Classifying "has a dot"
+    # as file-only let .git/ and .claude/ leak into the tarball.
     if ($p -match '[\\/]') {
         $xd += $p.TrimEnd('/').Replace('/', '\')
-    } elseif ($p -like '*.*' -or $p -like '*?*') {
-        $xf += $p
     } else {
         $xd += $p
         $xf += $p

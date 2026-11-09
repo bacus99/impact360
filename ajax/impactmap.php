@@ -30,7 +30,7 @@
 use GlpiPlugin\Impact360\Config;
 use GlpiPlugin\Impact360\ImpactMap;
 
-include('../../../inc/includes.php');
+// No include of GLPI's inc/includes.php: the kernel has already booted before a plugin script runs (GLPI 11 and 12); the relative path fails when the plugin lives in a marketplace directory outside the GLPI root.
 
 global $CFG_GLPI, $DB;
 

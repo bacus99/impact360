@@ -17,7 +17,7 @@
 use GlpiPlugin\Impact360\ComputerDashboard;
 use GlpiPlugin\Impact360\Config;
 
-include('../../../inc/includes.php');
+// No include of GLPI's inc/includes.php: the kernel has already booted before a plugin script runs (GLPI 11 and 12); the relative path fails when the plugin lives in a marketplace directory outside the GLPI root.
 
 $plugin = new Plugin();
 if (!$plugin->isInstalled('impact360') || !$plugin->isActivated('impact360')) {

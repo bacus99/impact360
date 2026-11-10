@@ -37,6 +37,45 @@
     const i18n = cfg.i18n || {};
     const t = (k, fallback) => (i18n[k] || fallback || k);
 
+    /**
+     * Resolve the active GLPI palette (Tabler CSS variables) to plain colour
+     * strings, once at init. vis-network draws on a <canvas>, which CSS
+     * variables never reach — so chrome colours (labels, edges, selection,
+     * health rings) must be passed as resolved values, never as var(...).
+     * Per-itemtype node fills (ImpactMap::STYLES) and GLPI compound colours
+     * are categorical and stay as the server sends them.
+     */
+    function uxcThemeColors(el) {
+        const cs = getComputedStyle(el || document.documentElement);
+        const v = (n, fb) => (cs.getPropertyValue(n) || '').trim() || fb;
+        const fg = v('--tblr-body-color', '#1d273b');
+        // Translucent variant of a resolved hex/rgb() colour (canvas has no color-mix).
+        const alpha = (c, a, fb) => {
+            let m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(c);
+            if (m) {
+                let h = m[1];
+                if (h.length === 3) { h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; }
+                return 'rgba(' + parseInt(h.substring(0, 2), 16) + ',' + parseInt(h.substring(2, 4), 16) + ',' +
+                    parseInt(h.substring(4, 6), 16) + ',' + a + ')';
+            }
+            m = /^rgba?\(\s*([\d.]+)[\s,]+([\d.]+)[\s,]+([\d.]+)/i.exec(c);
+            return m ? 'rgba(' + m[1] + ',' + m[2] + ',' + m[3] + ',' + a + ')' : fb;
+        };
+        return {
+            fg: fg,
+            muted: v('--tblr-secondary-color', v('--tblr-secondary', '#667382')),
+            line: v('--tblr-border-color', '#e6e7e9'),
+            surface: v('--tblr-bg-surface', v('--tblr-card-bg', '#ffffff')),
+            primary: v('--tblr-primary', '#206bc4'),
+            info: v('--tblr-info', '#4299e1'),
+            danger: v('--tblr-danger', '#d63939'),
+            warning: v('--tblr-warning', '#f59f00'),
+            success: v('--tblr-success', '#2fb344'),
+            shadow: alpha(fg, 0.08, 'rgba(0,0,0,0.08)'),
+        };
+    }
+    const THEME = uxcThemeColors(root);
+
     const canvas = root.querySelector('.uxc-impact-canvas');
     const sidePanel = root.querySelector('.uxc-impact-side');
     const statusEl = root.querySelector('.uxc-impact-status');
@@ -163,7 +202,8 @@
     }
 
     // Health overlay colors (SysAid/ServiceNow-style status on the map).
-    const HEALTH_BORDER = { crit: '#d63939', warn: '#f59f00' };
+    // Follows the active palette's danger/warning (resolved at init).
+    const HEALTH_BORDER = { crit: THEME.danger, warn: THEME.warning };
 
     function buildVisNodes() {
         return allNodes.map(n => {
@@ -180,7 +220,7 @@
             // still win over the seed border so problems stay visible.
             const level = n.health && n.health.level;
             const isSeed = !!n.seed;
-            const border = HEALTH_BORDER[level] || (isSeed ? '#111827' : n.border);
+            const border = HEALTH_BORDER[level] || (isSeed ? THEME.fg : n.border);
             const borderWidth = (HEALTH_BORDER[level] || isSeed) ? 3 : 2;
             return {
                 id: n.id,
@@ -190,8 +230,8 @@
                 color: {
                     background: n.color,
                     border: border,
-                    highlight: { background: n.color, border: HEALTH_BORDER[level] || '#111827' },
-                    hover: { background: n.color, border: HEALTH_BORDER[level] || '#111827' },
+                    highlight: { background: n.color, border: HEALTH_BORDER[level] || THEME.fg },
+                    hover: { background: n.color, border: HEALTH_BORDER[level] || THEME.fg },
                 },
                 borderWidth: borderWidth,
                 font: { color: pickFontColor(n.color), size: isSeed ? 14 : 13, face: 'inherit' },
@@ -231,8 +271,8 @@
                 to: e.to,
                 arrows: { to: { enabled: true, scaleFactor: 0.6 } },
                 color: observed
-                    ? { color: '#60a5fa', highlight: '#2563eb', hover: '#2563eb' }
-                    : { color: '#94a3b8', highlight: '#1f2937', hover: '#1f2937' },
+                    ? { color: THEME.info, highlight: THEME.primary, hover: THEME.primary }
+                    : { color: THEME.muted, highlight: THEME.fg, hover: THEME.fg },
                 width: width,
                 dashes: observed ? [6, 4] : false,
             };
@@ -240,11 +280,11 @@
             // Always set both keys so a DataSet.update can CLEAR them when off.
             const showLabel = state.showEdgeLabels && !!e.label;
             edge.label = showLabel ? String(e.label) : undefined;
-            // Opaque white "pill", horizontal text → readable floating over the
-            // (possibly thick) edge instead of buried under/along the line.
+            // Opaque surface-coloured "pill", horizontal text → readable floating
+            // over the (possibly thick) edge instead of buried under/along the line.
             edge.font = showLabel ? {
-                size: 11, color: '#1f2937', face: 'arial',
-                background: '#ffffff',
+                size: 11, color: THEME.fg, face: 'arial',
+                background: THEME.surface,
                 strokeWidth: 0, align: 'horizontal', vadjust: 0,
                 multi: false,
             } : undefined;
@@ -526,7 +566,7 @@
             },
             nodes: {
                 borderWidth: 2,
-                shadow: { enabled: true, size: 4, x: 0, y: 1, color: 'rgba(0,0,0,0.08)' },
+                shadow: { enabled: true, size: 4, x: 0, y: 1, color: THEME.shadow },
             },
             edges: {
                 hoverWidth: 0.5,
@@ -795,8 +835,8 @@
                     borderWidth: 2,
                     color: {
                         background: style.color,
-                        border: '#111827',
-                        highlight: { background: style.color, border: '#111827' },
+                        border: THEME.fg,
+                        highlight: { background: style.color, border: THEME.fg },
                     },
                     font: { color: pickFontColor(style.color), size: 14, face: 'inherit' },
                     shapeProperties: { borderRadius: 8, borderDashes: [6, 4] },
@@ -832,8 +872,8 @@
                 borderWidth: HEALTH_BORDER[meta.health] ? 3 : 2,
                 color: {
                     background: meta.color || '#6B7280',
-                    border: HEALTH_BORDER[meta.health] || '#111827',
-                    highlight: { background: meta.color || '#6B7280', border: HEALTH_BORDER[meta.health] || '#111827' },
+                    border: HEALTH_BORDER[meta.health] || THEME.fg,
+                    highlight: { background: meta.color || '#6B7280', border: HEALTH_BORDER[meta.health] || THEME.fg },
                 },
                 font: { color: pickFontColor(meta.color || '#6B7280'), size: 14, face: 'inherit' },
                 shapeProperties: { borderRadius: 8 },
@@ -901,8 +941,8 @@
                             label: base.length + ' ' + t('conn', 'conn.'),
                             font: {
                                 size: 10,
-                                color: '#1f2937',
-                                background: 'rgba(255,255,255,0.92)',
+                                color: THEME.fg,
+                                background: THEME.surface,
                                 strokeWidth: 0,
                                 align: 'middle',
                             },
@@ -1139,7 +1179,7 @@
         out.height = src.height;
         const ctx = out.getContext('2d');
         const bg = getComputedStyle(canvas.closest('.uxc-impact-stage') || canvas).backgroundColor;
-        ctx.fillStyle = (bg && bg !== 'rgba(0, 0, 0, 0)') ? bg : '#ffffff';
+        ctx.fillStyle = (bg && bg !== 'rgba(0, 0, 0, 0)') ? bg : THEME.surface;
         ctx.fillRect(0, 0, out.width, out.height);
         ctx.drawImage(src, 0, 0);
 
@@ -1164,7 +1204,7 @@
     function defaultBorder(payload) {
         const level = payload && payload.health && payload.health.level;
         const isSeed = payload && payload.seed;
-        return HEALTH_BORDER[level] || (isSeed ? '#111827' : (payload ? payload.border : '#6B7280'));
+        return HEALTH_BORDER[level] || (isSeed ? THEME.fg : (payload ? payload.border : THEME.muted));
     }
 
     /** Base node ids currently inside cluster c. */
@@ -1198,7 +1238,7 @@
             const isOrigin = bases.some(b => origin.has(b));
             const isHi = isOrigin || bases.some(b => hi.has(b));
             const opacity = isHi ? 1 : 0.15;
-            const border = isOrigin ? '#b91c1c' : (isHi ? edgeColor : null);
+            const border = isOrigin ? THEME.danger : (isHi ? edgeColor : null);
             const bw = isOrigin ? 4 : (isHi ? 3 : 2);
             if (top.cluster) {
                 const opts = { opacity: opacity, borderWidth: bw };
@@ -1217,7 +1257,7 @@
             const on = (hi.has(e.from) || origin.has(e.from)) && (hi.has(e.to) || origin.has(e.to));
             edgeUpdates.push({
                 id: e.id,
-                color: { color: on ? edgeColor : '#e2e8f0' },
+                color: { color: on ? edgeColor : THEME.line },
                 width: on ? 2.5 : 1,
             });
         });
@@ -1247,12 +1287,12 @@
             try {
                 network.clustering.updateClusteredNode(cid, {
                     opacity: 1, borderWidth: 2,
-                    color: { border: '#111827', background: (m && m.color) || '#6B7280' },
+                    color: { border: THEME.fg, background: (m && m.color) || '#6B7280' },
                 });
             } catch (e) { /* ignore */ }
         });
         const edgeUpdates = [];
-        edgesDS.forEach(e => edgeUpdates.push({ id: e.id, color: { color: '#94a3b8' }, width: 1.5 }));
+        edgesDS.forEach(e => edgeUpdates.push({ id: e.id, color: { color: THEME.muted }, width: 1.5 }));
         edgesDS.update(edgeUpdates);
         labelAllClusterEdges();
         state.analysisOn = false;
@@ -1284,7 +1324,7 @@
         }
         const hi = new Set(affected);
         const origin = new Set([originId]);
-        paintOverlay(hi, origin, '#d63939');
+        paintOverlay(hi, origin, THEME.danger);
         const name = (nodeById[originId] && nodeById[originId].name) || originId;
         setStatus(affected.size + ' ' + t('affected_if_fails', 'affected if this fails') + ' — ' + name, 'info');
     }
@@ -1297,7 +1337,7 @@
         if (state.pathFirst === null) {
             state.pathFirst = id;
             clearAnalysis();
-            paintOverlay(new Set(), new Set([id]), '#2563eb');
+            paintOverlay(new Set(), new Set([id]), THEME.primary);
             const name = (nodeById[id] && nodeById[id].name) || id;
             setStatus(t('path_from', 'Path from') + ' ' + name + ' — ' + t('path_pick2', 'pick a second node'), 'info');
             return;
@@ -1332,7 +1372,7 @@
         let cur = b;
         while (cur !== a) { chain.add(cur); cur = prev[cur]; }
         chain.add(a);
-        paintOverlay(chain, new Set([a, b]), '#2563eb');
+        paintOverlay(chain, new Set([a, b]), THEME.primary);
         setStatus(t('path_len', 'Path length') + ': ' + (chain.size - 1), 'info');
     }
 
@@ -1400,7 +1440,10 @@
             const w = W(id);
             const x = (p.x + ox - w / 2), y = (p.y + oy - H / 2);
             const fill = (n && n.color && n.color.background) || '#9CA3AF';
-            const stroke = (n && n.color && n.color.border) || '#6B7280';
+            // The SVG is a fixed light drawing: keep the seed/cluster outline
+            // dark, as before, instead of the palette fg (light on dark palettes).
+            const rawStroke = (n && n.color && n.color.border) || '#6B7280';
+            const stroke = rawStroke === THEME.fg ? '#111827' : rawStroke;
             const fg = pickFontColor(fill);
             parts.push('<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) +
                 '" height="' + H + '" rx="6" fill="' + fill + '" stroke="' + stroke + '" stroke-width="2"/>');
@@ -1429,7 +1472,11 @@
         w.document.close();
     }
 
-    /** Composite the network canvas onto white; return a PNG data URL. */
+    /**
+     * Composite the network canvas onto the palette surface (the canvas'
+     * labels/edges are drawn in palette colours, so a fixed white would lose
+     * them on dark palettes); return a PNG data URL.
+     */
     function pngDataUrl() {
         if (!network) return null;
         let src;
@@ -1437,7 +1484,7 @@
         const out = document.createElement('canvas');
         out.width = src.width; out.height = src.height;
         const ctx = out.getContext('2d');
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = THEME.surface;
         ctx.fillRect(0, 0, out.width, out.height);
         ctx.drawImage(src, 0, 0);
         return out.toDataURL('image/png');
@@ -1474,7 +1521,7 @@
                 color: (n && n.color && n.color.background) || '#9CA3AF',
             });
         });
-        const mEdges = allEdges.map((e, i) => ({ id: 'm' + i, from: e.from, to: e.to, color: { color: '#cbd5e1' }, width: 0.5 }));
+        const mEdges = allEdges.map((e, i) => ({ id: 'm' + i, from: e.from, to: e.to, color: { color: THEME.line }, width: 0.5 }));
         mini = new vis.Network(miniEl, { nodes: new vis.DataSet(mNodes), edges: new vis.DataSet(mEdges) }, {
             interaction: { dragNodes: false, dragView: false, zoomView: false, selectable: false, hover: false },
             physics: false,
@@ -1490,7 +1537,7 @@
                 const w = (cv.clientWidth || cv.width) / s;
                 const h = (cv.clientHeight || cv.height) / s;
                 ctx.save();
-                ctx.strokeStyle = '#2563eb';
+                ctx.strokeStyle = THEME.primary;
                 ctx.lineWidth = 3 / mini.getScale();
                 ctx.strokeRect(c.x - w / 2, c.y - h / 2, w, h);
                 ctx.restore();
@@ -1645,7 +1692,7 @@
         let healthRows = '';
         const h = node._health;
         if (h && h.level) {
-            const dot = h.level === 'crit' ? '#d63939' : (h.level === 'warn' ? '#f59f00' : '#2fb344');
+            const dot = h.level === 'crit' ? 'var(--uxc-bad, #d63939)' : (h.level === 'warn' ? 'var(--uxc-warn, #f59f00)' : 'var(--uxc-ok, #2fb344)');
             healthRows += '<dt>' + t('health', 'Health') + '</dt><dd>' +
                 '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + dot + ';margin-right:0.35rem"></span>' +
                 escapeHtml(t('health_' + h.level, h.level)) + '</dd>';
@@ -1659,7 +1706,7 @@
                         : escapeHtml(h.agent_days) + ' ' + escapeHtml(t('days_ago', 'days ago'))) + '</dd>';
             }
             if (h.vulns) {
-                const vdot = h.vulns === 'crit' ? '#d63939' : (h.vulns === 'warn' ? '#f59f00' : '#2fb344');
+                const vdot = h.vulns === 'crit' ? 'var(--uxc-bad, #d63939)' : (h.vulns === 'warn' ? 'var(--uxc-warn, #f59f00)' : 'var(--uxc-ok, #2fb344)');
                 healthRows += '<dt>' + t('vulns', 'Vulnerabilities') + '</dt><dd>' +
                     '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:' + vdot + ';margin-right:0.35rem"></span>' +
                     escapeHtml(t('vulns_' + h.vulns, h.vulns)) + '</dd>';

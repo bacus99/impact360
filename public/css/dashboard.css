@@ -1,20 +1,26 @@
 /*
  * UX Customizer - Computer Dashboard styles.
  * Everything is scoped under .uxc-ci-detail so it can't leak into the rest of
- * GLPI. Dark by default (matches the mockup); a light fallback is provided for
- * GLPI light themes via [data-bs-theme="light"].
+ * GLPI. Every token derives from GLPI/Tabler's own CSS variables, so the
+ * dashboard follows whatever palette the user picked in My Settings (light,
+ * dark or a custom palette) with no theme-specific override block. Literal
+ * values are only fallbacks for when a Tabler variable is undefined.
  */
 
 .uxc-ci-detail {
-    --uxc-bg:      #1f2329;
-    --uxc-card:    #2a2f37;
-    --uxc-card-2:  #20242b;
-    --uxc-fg:      #e9ecef;
-    --uxc-muted:   #9aa4b2;
-    --uxc-line:    #3a414b;
-    --uxc-ok:      #2fb344;
-    --uxc-bad:     #e5546a;
-    --uxc-warn:    #f1a531;
+    --uxc-bg:          var(--tblr-body-bg, #f6f8fb);
+    --uxc-card:        var(--tblr-bg-surface, var(--tblr-card-bg, #ffffff));
+    --uxc-card-2:      var(--tblr-bg-surface-secondary, var(--tblr-tertiary-bg, #f6f8fb));
+    --uxc-fg:          var(--tblr-body-color, #1d273b);
+    --uxc-muted:       var(--tblr-secondary-color, var(--tblr-secondary, #667382));
+    --uxc-line:        var(--tblr-border-color, #e6e7e9);
+    --uxc-accent:      var(--tblr-primary, #206bc4);
+    --uxc-accent-soft: var(--tblr-active-bg, rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.12));
+    --uxc-ok:          var(--tblr-success, #2fb344);
+    --uxc-warn:        var(--tblr-warning, #f59f00);
+    --uxc-bad:         var(--tblr-danger, #d63939);
+    --uxc-info:        var(--tblr-info, #4299e1);
+    --uxc-purple:      var(--tblr-purple, #ae3ec9);
 
     color: var(--uxc-fg);
     padding: 0.5rem 0 1rem;
@@ -24,14 +30,6 @@
     flex-direction: column;
     gap: 1rem;
 }
-:root[data-bs-theme="light"] .uxc-ci-detail {
-    --uxc-bg:     #f5f5f5;
-    --uxc-card:   #ffffff;
-    --uxc-card-2: #f1f3f5;
-    --uxc-fg:     #1a2129;
-    --uxc-muted:  #5b6675;
-    --uxc-line:   #e3e6ea;
-}
 
 /* ── Top bar ── */
 .uxc-ci-detail .uxc-topbar {
@@ -39,10 +37,10 @@
     align-items: center; justify-content: space-between;
     margin-bottom: 1rem;
 }
-/* Top-bar text sits on GLPI's page background (not a dark card), so use GLPI's
-   own theme text colour — readable on both light and dark GLPI themes. */
-.uxc-ci-detail .uxc-ci-name { font-size: 1.4rem; font-weight: 700; color: var(--tblr-body-color, #1a2129); }
-.uxc-ci-detail .uxc-ci-sub  { color: var(--tblr-secondary-color, var(--tblr-secondary, #6c757d)); margin-left: 0.5rem; font-size: 0.9rem; }
+/* Top-bar text sits on GLPI's page background (not a card); the tokens map to
+   GLPI's own theme text colours, so it stays readable on every palette. */
+.uxc-ci-detail .uxc-ci-name { font-size: 1.4rem; font-weight: 700; color: var(--uxc-fg); }
+.uxc-ci-detail .uxc-ci-sub  { color: var(--uxc-muted); margin-left: 0.5rem; font-size: 0.9rem; }
 .uxc-ci-detail .uxc-topbar-badges { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .uxc-ci-detail .uxc-badge {
     background: var(--uxc-card); border: 1px solid var(--uxc-line);
@@ -50,7 +48,7 @@
 }
 .uxc-ci-detail .uxc-badge-status { color: var(--uxc-ok); border-color: var(--uxc-ok); }
 .uxc-ci-detail .uxc-btn {
-    background: var(--tblr-primary, #008fd5); color: #fff;
+    background: var(--uxc-accent); color: #fff;
     border-radius: 6px; padding: 0.35rem 0.9rem; text-decoration: none; font-size: 0.85rem;
 }
 
@@ -119,7 +117,7 @@
 .uxc-ci-detail .uxc-btn-sm { padding: 0.2rem 0.6rem; font-size: 0.8rem; }
 .uxc-ci-detail .uxc-link {
     display: inline-block; margin-top: 0.6rem; font-size: 0.85rem;
-    color: var(--tblr-primary, #008fd5); text-decoration: none;
+    color: var(--uxc-accent); text-decoration: none;
 }
 .uxc-ci-detail .uxc-link:hover { text-decoration: underline; }
 
@@ -172,8 +170,8 @@
     margin-top: 0.75rem; display: inline-block;
     padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.85rem; font-weight: 600;
 }
-.uxc-ci-detail .uxc-life-ok      { background: rgba(47, 179, 68, 0.15);  color: var(--uxc-ok); }
-.uxc-ci-detail .uxc-life-overdue { background: rgba(229, 84, 106, 0.15); color: var(--uxc-bad); }
+.uxc-ci-detail .uxc-life-ok      { background: color-mix(in srgb, var(--uxc-ok) 15%, transparent);  color: var(--uxc-ok); }
+.uxc-ci-detail .uxc-life-overdue { background: color-mix(in srgb, var(--uxc-bad) 15%, transparent); color: var(--uxc-bad); }
 
 /* ── Volumes (disk usage bars) — compact, multi-column ── */
 .uxc-ci-detail .uxc-vol-head {
@@ -196,12 +194,12 @@
     height: 6px; border-radius: 999px; background: var(--uxc-card-2); overflow: hidden;
 }
 .uxc-ci-detail .uxc-bar-fill { height: 100%; border-radius: 999px; }
-.uxc-ci-detail .uxc-bar-ok   { background: var(--tblr-primary, #008fd5); }
+.uxc-ci-detail .uxc-bar-ok   { background: var(--uxc-accent); }
 .uxc-ci-detail .uxc-bar-warn { background: var(--uxc-warn); }
 .uxc-ci-detail .uxc-bar-bad  { background: var(--uxc-bad); }
 
 /* ── CVE Exposure table — styled entirely with our own tokens (not Bootstrap's
-   .table-striped, whose CSS vars clash with this card's dark/light theming and
+   .table-striped, whose CSS vars clash with this card's palette tokens and
    washed rows out to near-invisible text) ── */
 .uxc-ci-detail .uxc-table-wrap { overflow-x: auto; }
 .uxc-ci-detail .uxc-table { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; font-size: 0.85rem; }

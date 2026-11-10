@@ -2,7 +2,7 @@
 # Generate per-language .po/.mo with GLPI's standard locale tooling.
 msgid ""
 msgstr ""
-"Project-Id-Version: Impact360 1.0.0\n"
+"Project-Id-Version: Impact360 1.4.0\n"
 "Report-Msgid-Bugs-To: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"

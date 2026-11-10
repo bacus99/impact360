@@ -1,0 +1,118 @@
+/*
+ * Impact360 - "Vuln Priority" tab styles.
+ * Scoped under .uxc-vp. Same --uxc-* token vocabulary as dashboard.css /
+ * cve.css, copied so this file stays self-contained.
+ * Every colour derives from GLPI's active palette (Tabler --tblr-* variables,
+ * set per user in My Settings), with literal fallbacks only for a page that
+ * somehow lacks them — so light, dark and custom palettes all apply without
+ * a theme-specific override here.
+ */
+
+.uxc-vp {
+    --uxc-bg:          var(--tblr-body-bg, #f6f8fb);
+    --uxc-card:        var(--tblr-bg-surface, var(--tblr-card-bg, #ffffff));
+    --uxc-card-2:      var(--tblr-bg-surface-secondary, var(--tblr-tertiary-bg, #f6f8fb));
+    --uxc-fg:          var(--tblr-body-color, #1d273b);
+    --uxc-muted:       var(--tblr-secondary-color, var(--tblr-secondary, #667382));
+    --uxc-line:        var(--tblr-border-color, #e6e7e9);
+    --uxc-accent:      var(--tblr-primary, #206bc4);
+    --uxc-accent-soft: var(--tblr-active-bg, rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.12));
+    --uxc-ok:          var(--tblr-success, #2fb344);
+    --uxc-warn:        var(--tblr-warning, #f59f00);
+    --uxc-bad:         var(--tblr-danger, #d63939);
+    --uxc-info:        var(--tblr-info, #4299e1);
+    --uxc-purple:      var(--tblr-purple, #ae3ec9);
+
+    /* Priority tiers map onto the palette's status colours. */
+    --uxc-p1:     var(--uxc-bad);
+    --uxc-p2:     var(--uxc-warn);
+    --uxc-p3:     var(--tblr-yellow, #f7c948);
+    --uxc-p4:     var(--uxc-ok);
+
+    color: var(--uxc-fg);
+    padding: 0.5rem 0;
+}
+
+.uxc-vp .uxc-muted { color: var(--uxc-muted); }
+
+/* ── Summary cards ── */
+.uxc-vp-top {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.uxc-vp-card {
+    background: var(--uxc-card);
+    border: 1px solid var(--uxc-line);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+    min-width: 0;
+}
+.uxc-vp-label {
+    font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--uxc-muted); margin-bottom: 0.35rem;
+}
+.uxc-vp-big { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+.uxc-vp-of  { font-size: 0.9rem; font-weight: 400; color: var(--uxc-muted); margin-left: 0.15rem; }
+.uxc-vp-sub { font-size: 0.82rem; margin-top: 0.3rem; }
+
+.uxc-vp-score { border-left: 5px solid var(--uxc-line); }
+.uxc-vp-score.uxc-tier-p1 { border-left-color: var(--uxc-p1); }
+.uxc-vp-score.uxc-tier-p2 { border-left-color: var(--uxc-p2); }
+.uxc-vp-score.uxc-tier-p3 { border-left-color: var(--uxc-p3); }
+.uxc-vp-score.uxc-tier-p4 { border-left-color: var(--uxc-p4); }
+.uxc-vp-score.uxc-tier-p1 .uxc-vp-big { color: var(--uxc-p1); }
+.uxc-vp-score.uxc-tier-p2 .uxc-vp-big { color: var(--uxc-p2); }
+.uxc-vp-tier { font-weight: 700; }
+
+.uxc-vp-apps { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.5rem; }
+.uxc-vp-app {
+    font-size: 0.75rem; padding: 0.1rem 0.5rem; border-radius: 999px;
+    background: var(--uxc-card-2); border: 1px solid var(--uxc-line);
+    color: var(--uxc-fg); text-decoration: none; white-space: nowrap;
+}
+.uxc-vp-app.is-prod { border-color: var(--uxc-p2); }
+.uxc-vp-app:hover { color: var(--uxc-fg); background: var(--uxc-line); }
+
+/* ── Notice ── */
+.uxc-vp-note {
+    border: 1px solid var(--uxc-p2); border-radius: 8px;
+    padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;
+}
+
+/* ── Table ── */
+.uxc-vp-tablewrap { overflow-x: auto; }
+.uxc-vp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.uxc-vp-table th {
+    text-align: left; font-weight: 600; color: var(--uxc-muted);
+    border-bottom: 1px solid var(--uxc-line); padding: 0.4rem 0.5rem; white-space: nowrap;
+}
+.uxc-vp-table td {
+    border-bottom: 1px solid var(--uxc-line); padding: 0.45rem 0.5rem; vertical-align: top;
+}
+.uxc-vp-cvetitle { font-size: 0.75rem; max-width: 28rem; }
+
+.uxc-vp-pill {
+    display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+    font-weight: 700; font-size: 0.78rem; white-space: nowrap; color: #fff;
+    background: var(--uxc-p4); cursor: help;
+}
+.uxc-vp-pill.uxc-tier-p1 { background: var(--uxc-p1); }
+.uxc-vp-pill.uxc-tier-p2 { background: var(--uxc-p2); color: #1d273b; }
+.uxc-vp-pill.uxc-tier-p3 { background: var(--uxc-p3); color: #1d273b; }
+
+.uxc-vp-kev {
+    display: inline-block; padding: 0.05rem 0.4rem; border-radius: 4px;
+    background: var(--uxc-p1); color: #fff; font-weight: 700; font-size: 0.75rem;
+}
+.uxc-vp-flag {
+    display: inline-block; padding: 0 0.35rem; border-radius: 4px;
+    border: 1px solid var(--uxc-p1); color: var(--uxc-p1); font-size: 0.72rem;
+}
+.uxc-vp-src {
+    display: inline-block; padding: 0 0.4rem; border-radius: 4px; margin: 0 0.15rem 0.15rem 0;
+    background: var(--uxc-card-2); border: 1px solid var(--uxc-line); font-size: 0.75rem;
+}
+
+.uxc-vp-formula { font-size: 0.75rem; margin-top: 0.6rem; }

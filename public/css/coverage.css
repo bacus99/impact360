@@ -1,0 +1,98 @@
+/*
+ * Impact360 - Coverage Gaps board styles.
+ * Scoped under .uxc-cov. Every colour derives from GLPI's active palette
+ * (Tabler --tblr-* variables, set per user in My Settings), with literal
+ * fallbacks only for a page that somehow lacks them — so light, dark and
+ * custom palettes all apply without a theme-specific override here.
+ */
+
+.uxc-cov {
+    --uxc-bg:          var(--tblr-body-bg, #f6f8fb);
+    --uxc-card:        var(--tblr-bg-surface, var(--tblr-card-bg, #ffffff));
+    --uxc-card-2:      var(--tblr-bg-surface-secondary, var(--tblr-tertiary-bg, #f6f8fb));
+    --uxc-fg:          var(--tblr-body-color, #1d273b);
+    --uxc-muted:       var(--tblr-secondary-color, var(--tblr-secondary, #667382));
+    --uxc-line:        var(--tblr-border-color, #e6e7e9);
+    --uxc-accent:      var(--tblr-primary, #206bc4);
+    --uxc-accent-soft: var(--tblr-active-bg, rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.12));
+    --uxc-ok:          var(--tblr-success, #2fb344);
+    --uxc-warn:        var(--tblr-warning, #f59f00);
+    --uxc-bad:         var(--tblr-danger, #d63939);
+    --uxc-info:        var(--tblr-info, #4299e1);
+    --uxc-purple:      var(--tblr-purple, #ae3ec9);
+
+    color: var(--uxc-fg);
+}
+.uxc-cov .uxc-muted { color: var(--uxc-muted); }
+
+.uxc-cov-card {
+    background: var(--uxc-card); border: 1px solid var(--uxc-line);
+    border-radius: 10px; padding: 1rem;
+}
+.uxc-cov-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.uxc-cov-title { font-weight: 600; margin-bottom: 0.5rem; }
+.uxc-cov-head .uxc-cov-title { margin-bottom: 0; }
+.uxc-cov-clear { font-weight: 400; font-size: 0.8rem; margin-left: 0.5rem; }
+
+.uxc-cov-note {
+    border: 1px solid var(--uxc-warn); border-radius: 8px;
+    padding: 0.5rem 0.75rem; margin-bottom: 0.75rem; font-size: 0.85rem;
+}
+
+/* ── Tiles ── */
+.uxc-cov-tiles {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem; margin-bottom: 1rem;
+}
+.uxc-cov-tile {
+    display: block; background: var(--uxc-card); border: 1px solid var(--uxc-line);
+    border-left: 5px solid var(--uxc-line); border-radius: 10px; padding: 0.8rem 1rem;
+    color: var(--uxc-fg); text-decoration: none;
+}
+.uxc-cov-tile:hover { color: var(--uxc-fg); background: var(--uxc-card-2); }
+.uxc-cov-tile.is-active { outline: 2px solid var(--uxc-accent); outline-offset: -1px; }
+.uxc-cov-tile.tone-bad  { border-left-color: var(--uxc-bad); }
+.uxc-cov-tile.tone-warn { border-left-color: var(--uxc-warn); }
+.uxc-cov-tile.tone-ok   { border-left-color: var(--uxc-ok); }
+.uxc-cov-tile.tone-neutral { border-left-color: var(--uxc-accent); }
+.uxc-cov-tile-n { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
+.uxc-cov-tile.tone-bad .uxc-cov-tile-n { color: var(--uxc-bad); }
+.uxc-cov-tile-l { font-size: 0.82rem; margin-top: 0.2rem; }
+.uxc-cov-tile-p { font-size: 0.75rem; color: var(--uxc-muted); }
+.uxc-cov-tile-s { font-size: 0.75rem; color: var(--uxc-muted); margin-top: 0.35rem; }
+.uxc-cov-link { color: var(--uxc-accent); cursor: pointer; text-decoration: underline; }
+
+/* ── Tables ── */
+.uxc-cov-tablewrap { overflow-x: auto; }
+.uxc-cov-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.uxc-cov-table th {
+    text-align: left; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+    font-size: 0.72rem; color: var(--uxc-muted); border-bottom: 1px solid var(--uxc-line);
+    padding: 0.45rem 0.6rem; white-space: nowrap;
+}
+.uxc-cov-table td { border-bottom: 1px solid var(--uxc-line); padding: 0.45rem 0.6rem; vertical-align: middle; }
+.uxc-cov-table tbody tr:hover { background: var(--uxc-card-2); }
+.uxc-cov-table .c { text-align: center; }
+.uxc-cov-table .r { text-align: right; }
+
+.uxc-cov-patterns tr.is-armis-only td { background: color-mix(in srgb, var(--uxc-bad) 10%, transparent); }
+.uxc-cov-patterns tr.is-none td       { background: color-mix(in srgb, var(--uxc-warn) 10%, transparent); }
+.uxc-cov-barcol { width: 30%; min-width: 120px; }
+.uxc-cov-bar { display: block; height: 0.55rem; border-radius: 999px; background: var(--uxc-accent); min-width: 2px; }
+.uxc-cov-dot { display: inline-block; width: 0.8rem; height: 0.8rem; border-radius: 50%; }
+.uxc-cov-dot.on  { background: var(--uxc-ok); }
+.uxc-cov-dot.off { border: 2px solid var(--uxc-line); }
+.uxc-cov-tag {
+    display: inline-block; margin-left: 0.4rem; padding: 0 0.45rem; border-radius: 4px;
+    font-size: 0.72rem; font-weight: 600; color: var(--uxc-bad); border: 1px solid var(--uxc-bad);
+}
+
+.uxc-cov-st { font-size: 1.05rem; }
+.uxc-cov-st.st-s { color: var(--uxc-ok); }
+.uxc-cov-st.st-a { color: var(--uxc-bad); }
+.uxc-cov-st.st-t { color: var(--uxc-warn); }
+.uxc-cov-st.st-d { color: var(--uxc-purple); }
+.uxc-cov-st.st-u { color: var(--uxc-muted); opacity: 0.6; }
+
+.uxc-cov-pager { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 0.75rem; }
+.uxc-cov-legend { font-size: 0.78rem; margin-top: 0.75rem; }

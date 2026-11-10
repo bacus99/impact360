@@ -4,11 +4,28 @@
  */
 
 .uxc-impact-page {
-    --uxc-impact-bg: var(--tblr-body-bg, #f8fafc);
-    --uxc-impact-card-bg: var(--tblr-card-bg, #ffffff);
-    --uxc-impact-border: var(--tblr-border-color, #e2e8f0);
-    --uxc-impact-fg: var(--tblr-body-color, #0f172a);
-    --uxc-impact-muted: var(--tblr-secondary, #6b7280);
+    /* Shared palette contract: everything derives from the active GLPI/Tabler
+       palette (light, dark or custom) — no theme-specific override blocks. */
+    --uxc-bg:          var(--tblr-body-bg, #f6f8fb);
+    --uxc-card:        var(--tblr-bg-surface, var(--tblr-card-bg, #ffffff));
+    --uxc-card-2:      var(--tblr-bg-surface-secondary, var(--tblr-tertiary-bg, #f6f8fb));
+    --uxc-fg:          var(--tblr-body-color, #1d273b);
+    --uxc-muted:       var(--tblr-secondary-color, var(--tblr-secondary, #667382));
+    --uxc-line:        var(--tblr-border-color, #e6e7e9);
+    --uxc-accent:      var(--tblr-primary, #206bc4);
+    --uxc-accent-soft: var(--tblr-active-bg, rgba(var(--tblr-primary-rgb, 32, 107, 196), 0.12));
+    --uxc-ok:          var(--tblr-success, #2fb344);
+    --uxc-warn:        var(--tblr-warning, #f59f00);
+    --uxc-bad:         var(--tblr-danger, #d63939);
+    --uxc-info:        var(--tblr-info, #4299e1);
+    --uxc-purple:      var(--tblr-purple, #ae3ec9);
+
+    /* Existing Impact Map names (kept; shared with impactmap.js / ImpactMapTab.php). */
+    --uxc-impact-bg: var(--uxc-bg);
+    --uxc-impact-card-bg: var(--uxc-card);
+    --uxc-impact-border: var(--uxc-line);
+    --uxc-impact-fg: var(--uxc-fg);
+    --uxc-impact-muted: var(--uxc-muted);
 
     display: flex;
     flex-direction: column;
@@ -34,7 +51,7 @@
 }
 
 .uxc-impact-status--info    { color: var(--uxc-impact-muted); }
-.uxc-impact-status--error   { color: var(--tblr-danger, #d63939); }
+.uxc-impact-status--error   { color: var(--uxc-bad); }
 
 /* ── Legend ───────────────────────────────────────────────────────────── */
 .uxc-impact-legend {
@@ -63,7 +80,7 @@
 }
 
 .uxc-impact-legend-item:hover {
-    background: var(--tblr-active-bg, #f1f5f9);
+    background: var(--uxc-accent-soft);
     border-color: var(--uxc-impact-border);
 }
 
@@ -81,7 +98,7 @@
     width: 12px;
     height: 12px;
     border-radius: 3px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    border: 1px solid color-mix(in srgb, var(--uxc-impact-fg) 15%, transparent);
 }
 
 /* BFS depth selectors (on-asset tab only). Compact, no wrap. */
@@ -96,21 +113,21 @@
 
 /* Active state for outline buttons (layout toggle, minimap). */
 .uxc-impact-toolbar .btn.active {
-    background: var(--tblr-primary, #206bc4);
+    background: var(--uxc-accent);
     color: #fff;
-    border-color: var(--tblr-primary, #206bc4);
+    border-color: var(--uxc-accent);
 }
 
 /* Analysis-mode active buttons keep their semantic colour when toggled on. */
 .uxc-impact-toolbar .uxc-impact-whatif.active {
-    background: var(--tblr-danger, #d63939);
+    background: var(--uxc-bad);
     color: #fff;
-    border-color: var(--tblr-danger, #d63939);
+    border-color: var(--uxc-bad);
 }
 .uxc-impact-toolbar .uxc-impact-path.active {
-    background: var(--tblr-primary, #2563eb);
+    background: var(--uxc-accent);
     color: #fff;
-    border-color: var(--tblr-primary, #2563eb);
+    border-color: var(--uxc-accent);
 }
 
 /* In an analysis mode, the canvas cursor signals "pick a node". */
@@ -125,10 +142,10 @@
     bottom: 0.5rem;
     width: 200px;
     height: 140px;
-    background: var(--uxc-impact-card-bg, #fff);
-    border: 1px solid var(--uxc-impact-border, #e2e8f0);
+    background: var(--uxc-impact-card-bg);
+    border: 1px solid var(--uxc-impact-border);
     border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--uxc-impact-fg) 12%, transparent);
     overflow: hidden;
     z-index: 5;
 }
@@ -171,7 +188,7 @@
     background: var(--uxc-impact-card-bg);
     border: 1px solid var(--uxc-impact-border);
     border-radius: 8px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 4px 16px color-mix(in srgb, var(--uxc-impact-fg) 8%, transparent);
     transform: translateX(calc(100% + 1rem));
     transition: transform 220ms ease;
     overflow: hidden;
@@ -212,14 +229,16 @@
 }
 
 /* ── HTML tooltip override (vis-network renders DOM nodes as HTML) ────── */
+/* Inverted surface (fg as background, card colour as text): reads on light
+   and dark palettes alike. Fallbacks cover a tooltip rendered outside scope. */
 .vis-tooltip {
-    background: #111827 !important;
-    color: #f8fafc !important;
+    background: var(--uxc-impact-fg, var(--tblr-body-color, #1d273b)) !important;
+    color: var(--uxc-impact-card-bg, var(--tblr-bg-surface, #ffffff)) !important;
     border: none !important;
     border-radius: 6px !important;
     padding: 0.5rem 0.65rem !important;
     font-size: 0.825rem !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--uxc-impact-fg, var(--tblr-body-color, #1d273b)) 25%, transparent) !important;
     max-width: 240px;
 }
 

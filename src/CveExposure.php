@@ -4,12 +4,13 @@
  * Impact360 - CVE lookup data layer
  *
  * Given one CVE id, every asset that currently has it open (status =
- * vulnerable) across every itemtype the scanners cover (Computer,
- * NetworkEquipment, Phone, Printer, and the OT/custom asset types Armis
- * reports on), and which of the three security-scanner plugins (Armis,
- * Nexpose, Defender) currently flags it — membership is not uniform (an
- * asset may be Nexpose+Defender, another Defender only), so this returns
- * per-asset, per-source detail rather than a single yes/no.
+ * vulnerable; 'open' for Pentest-Tools.com) across every itemtype the
+ * scanners cover (Computer, NetworkEquipment, Phone, Printer, the OT/custom
+ * asset types Armis reports on, and the "Websites" custom asset that
+ * Pentest-Tools.com scans), and which of the four security-scanner plugins
+ * (Armis, Nexpose, Defender, Pentest-Tools) currently flags it — membership
+ * is not uniform (an asset may be Nexpose+Defender, another Defender only),
+ * so this returns per-asset, per-source detail rather than a single yes/no.
  *
  * *** HISTORY (2026-08-19) ***
  * This started as a fleet-wide "every CVE, one row each" aggregate board
@@ -81,6 +82,27 @@ class CveExposure
             'fk'       => 'plugin_defendersync_vulnerabilities_id',
             'label'    => 'Defender',
         ],
+        // Pentest-Tools.com website scans (itemtype is always the custom
+        // "Websites" asset). Differs from the three above in two ways:
+        //  - 'match' => 'items': the CVE ids live on the FINDING row
+        //    (`i`.`cve`, comma-separated, all CVEs of that finding), not on
+        //    the catalog row. The catalog `cve` is one shared value per
+        //    Pentest-Tools.com signature id and is unreliable for this
+        //    (see pentesttoolssync CLAUDE.md, Gotcha #12).
+        //  - 'open' => 'open': Pentest-Tools.com's own status vocabulary
+        //    (open/false_positive/ignored/fixed/accepted) rather than
+        //    'vulnerable'.
+        'pentesttools' => [
+            'plugin'   => 'pentesttoolssync',
+            'class'    => 'PluginPentesttoolssyncVulnerability',
+            'right'    => 'plugin_pentesttoolssync_vulnerability',
+            'catalog'  => 'glpi_plugin_pentesttoolssync_vulnerabilities',
+            'findings' => 'glpi_plugin_pentesttoolssync_vulnerabilities_items',
+            'fk'       => 'plugin_pentesttoolssync_vulnerabilities_id',
+            'label'    => 'Pentest-Tools',
+            'match'    => 'items',
+            'open'     => 'open',
+        ],
     ];
 
     /** In-request memo — install state and session rights don't change mid-request. */
@@ -143,9 +165,21 @@ class CveExposure
                 // No entities_id restriction (see class docblock).
                 $where = [
                     'i.itemtype' => $itemtype,
-                    'v.cve'      => $cve,
-                    'i.status'   => 'vulnerable',   // "only the open one"
+                    'i.status'   => $src['open'] ?? 'vulnerable',   // "only the open one"
                 ];
+                if (($src['match'] ?? 'catalog') === 'items') {
+                    // Finding-level, comma-separated list ("CVE-1, CVE-2"):
+                    // strip the spaces, then an exact element match (not a
+                    // substring LIKE, so CVE-2020-1234 never matches
+                    // CVE-2020-12345). $DB->quote() escapes the user input.
+                    // Not indexable, but already narrowed to one itemtype
+                    // and the (small) Websites findings set.
+                    $where[] = new \Glpi\DBAL\QueryExpression(
+                        'FIND_IN_SET(' . $DB->quote($cve) . ", REPLACE(`i`.`cve`, ' ', ''))"
+                    );
+                } else {
+                    $where['v.cve'] = $cve;
+                }
                 if ($DB->fieldExists($assetTable, 'is_deleted')) {
                     $where['a.is_deleted'] = 0;
                 }
@@ -181,9 +215,23 @@ class CveExposure
                                 'sources'     => [],
                             ];
                         }
+                        // A source can report several findings carrying the same
+                        // CVE on one asset (Pentest-Tools.com: one per affected
+                        // library/port): keep the widest first/last-seen window.
+                        $prev  = $merged[$ak]['sources'][$key] ?? null;
+                        $first = $r['first_seen'] ?? null;
+                        $last  = $r['last_seen'] ?? null;
+                        if ($prev !== null) {
+                            if ($prev['first_seen'] !== null && ($first === null || $prev['first_seen'] < $first)) {
+                                $first = $prev['first_seen'];
+                            }
+                            if ($prev['last_seen'] !== null && ($last === null || $prev['last_seen'] > $last)) {
+                                $last = $prev['last_seen'];
+                            }
+                        }
                         $merged[$ak]['sources'][$key] = [
-                            'first_seen' => $r['first_seen'] ?? null,
-                            'last_seen'  => $r['last_seen'] ?? null,
+                            'first_seen' => $first,
+                            'last_seen'  => $last,
                         ];
                     }
                 } catch (\Throwable $e) {

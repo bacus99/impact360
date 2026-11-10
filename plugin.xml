@@ -20,6 +20,9 @@ Impact360 turns GLPI's impact data into an operational dependency map.<br /><br 
 - Application health roll-up on Appliances (worst-of members), dependency-aware: a service is at risk when a CI it depends on is degraded.<br />
 - Application Health board: every Appliance as a health tile, worst-first.<br />
 - Optional observed-traffic overlay sourced from the netstatconnections plugin (real TCP/UDP dependencies) — a soft dependency, gracefully absent when the plugin is not installed.<br />
+- CVE Exposure lookup: enter a CVE id and see every asset open for it across Armis, Nexpose, Defender and Pentest-Tools.com.<br />
+- Vuln Priority tab: de-duplicated per-CI CVE list enriched with CISA KEV and EPSS, ranked by a contextual priority score.<br />
+- Coverage Gaps board: which of Armis, GLPI agent, Defender and Nexpose sees each asset.<br />
 - Read-only and entity-scoped (except the CVE Exposure lookup, which by design lists every visible asset); coexists with GLPI's native Impact Analysis tab.
          ]]></en>
          <fr><![CDATA[
@@ -30,6 +33,9 @@ Impact360 transforme les données d'impact de GLPI en une carte de dépendances 
 - Agrégation de santé applicative sur les Appliances (pire des membres), tenant compte des dépendances : un service est à risque quand un CI dont il dépend est dégradé.<br />
 - Tableau de bord de santé des applications : chaque Appliance sous forme de tuile, les plus critiques en premier.<br />
 - Superposition optionnelle du trafic observé via le plugin netstatconnections (dépendances TCP/UDP réelles) — dépendance souple, absente proprement si le plugin n'est pas installé.<br />
+- Recherche CVE Exposure : saisir un identifiant CVE pour voir tous les actifs concernés dans Armis, Nexpose, Defender et Pentest-Tools.com.<br />
+- Onglet Vuln Priority : liste de CVE dédupliquée par CI, enrichie avec CISA KEV et EPSS, classée par un score de priorité contextuel.<br />
+- Tableau Coverage Gaps : quels outils parmi Armis, l'agent GLPI, Defender et Nexpose voient chaque actif.<br />
 - En lecture seule et restreint par entité (sauf la recherche CVE Exposure, qui liste volontairement tous les actifs visibles) ; coexiste avec l'onglet natif d'analyse d'impact de GLPI.
          ]]></fr>
       </long>

@@ -140,15 +140,17 @@ class ImpactMapTab extends CommonGLPI
         if ($itemtype === 'Appliance') {
             $roll = ImpactMap::rollupHealth('Appliance', $itemId);
             if ($roll['level'] !== null) {
+                // Palette-driven (outside the .uxc-impact-page scope, so plain
+                // Tabler vars with literal fallbacks).
                 $styles = [
-                    'crit' => ['#d63939', __('Critical', 'impact360'), 'ti-alert-triangle-filled'],
-                    'warn' => ['#f59f00', __('Warning', 'impact360'),  'ti-alert-triangle'],
-                    'ok'   => ['#2fb344', __('Healthy', 'impact360'),   'ti-circle-check'],
+                    'crit' => ['var(--tblr-danger, #d63939)', __('Critical', 'impact360'), 'ti-alert-triangle-filled'],
+                    'warn' => ['var(--tblr-warning, #f59f00)', __('Warning', 'impact360'),  'ti-alert-triangle'],
+                    'ok'   => ['var(--tblr-success, #2fb344)', __('Healthy', 'impact360'),   'ti-circle-check'],
                 ];
                 [$col, $lbl, $ic] = $styles[$roll['level']];
                 $degraded = $roll['counts']['warn'] + $roll['counts']['crit'];
                 echo '<div class="uxc-impact-rollup d-flex align-items-center flex-wrap mb-2 p-2"'
-                    . ' style="border-left:4px solid ' . $col . ';background:rgba(0,0,0,.03);border-radius:4px">';
+                    . ' style="border-left:4px solid ' . $col . ';background:color-mix(in srgb, var(--tblr-body-color, #1d273b) 3%, transparent);border-radius:4px">';
                 echo '<i class="ti ' . $ic . ' me-2" style="color:' . $col . ';font-size:1.25rem"></i>';
                 echo '<strong style="color:' . $col . '">' . $lbl . '</strong>';
                 echo '<span class="text-muted ms-2 small" title="'

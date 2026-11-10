@@ -12,8 +12,9 @@
 
 use GlpiPlugin\Impact360\Config;
 use GlpiPlugin\Impact360\ComputerDashboard;
+use GlpiPlugin\Impact360\VulnIntel;
 
-include('../../../inc/includes.php');
+// No include of GLPI's inc/includes.php: the kernel has already booted before a plugin script runs (GLPI 11 and 12); the relative path fails when the plugin lives in a marketplace directory outside the GLPI root.
 
 global $CFG_GLPI, $DB;
 
@@ -43,7 +44,21 @@ if (isset($_POST['save_health'])) {
 
 if (isset($_POST['save_modules'])) {
     Config::setModuleEnabled('cve', isset($_POST['chk_module_cve']));
+    Config::setModuleEnabled('vulnpriority', isset($_POST['chk_module_vulnpriority']));
+    Config::setModuleEnabled('coverage', isset($_POST['chk_module_coverage']));
     Session::addMessageAfterRedirect(__('Module settings saved.', 'impact360'), true, INFO);
+    Html::redirect($CFG_GLPI['root_doc'] . '/plugins/impact360/front/config.php');
+}
+
+// Manual threat-intel refresh (same code path as the daily automatic action).
+if (isset($_POST['refresh_intel'])) {
+    $r = VulnIntel::refresh();
+    Session::addMessageAfterRedirect(
+        sprintf(__('Threat intel refreshed: %1$d KEV entries changed, %2$d EPSS scores updated.', 'impact360'), $r['kev'], $r['epss'])
+            . ($r['errors'] !== [] ? ' ' . implode(' / ', $r['errors']) : ''),
+        true,
+        $r['errors'] !== [] ? WARNING : INFO
+    );
     Html::redirect($CFG_GLPI['root_doc'] . '/plugins/impact360/front/config.php');
 }
 
@@ -85,8 +100,52 @@ echo '<input class="form-check-input" type="checkbox" role="switch" id="chk_modu
 echo '<label class="form-check-label" for="chk_module_cve">'
     . htmlspecialchars(__('CVE Exposure board (Plugins → CVE Exposure)', 'impact360'), ENT_QUOTES, 'UTF-8')
     . '</label></div>';
+echo '<div class="form-check form-switch mb-2">';
+echo '<input class="form-check-input" type="checkbox" role="switch" id="chk_module_vulnpriority" name="chk_module_vulnpriority"'
+    . (Config::isModuleEnabled('vulnpriority') ? ' checked' : '') . '>';
+echo '<label class="form-check-label" for="chk_module_vulnpriority">'
+    . htmlspecialchars(__('Vuln Priority tab (unified CVE list + contextual priority per CI)', 'impact360'), ENT_QUOTES, 'UTF-8')
+    . '</label></div>';
+echo '<div class="form-check form-switch mb-2">';
+echo '<input class="form-check-input" type="checkbox" role="switch" id="chk_module_coverage" name="chk_module_coverage"'
+    . (Config::isModuleEnabled('coverage') ? ' checked' : '') . '>';
+echo '<label class="form-check-label" for="chk_module_coverage">'
+    . htmlspecialchars(__('Coverage Gaps board (Plugins → Coverage Gaps: Armis / GLPI agent / Defender / Nexpose per asset)', 'impact360'), ENT_QUOTES, 'UTF-8')
+    . '</label></div>';
 echo '<button type="submit" class="btn btn-primary btn-sm mt-2">'
     . '<i class="ti ti-device-floppy me-1"></i>' . __('Save', 'impact360') . '</button>';
+echo '</div></div>'; // card
+echo '</form>';
+
+// ── Threat intel (CISA KEV + EPSS) ───────────────────────────────────────
+$intel = VulnIntel::status();
+echo '<form method="post" action="' . htmlspecialchars($self, ENT_QUOTES, 'UTF-8') . '" class="mb-3">';
+echo '<input type="hidden" name="_glpi_csrf_token" value="'
+    . htmlspecialchars(Session::getNewCSRFToken(), ENT_QUOTES, 'UTF-8') . '">';
+echo '<input type="hidden" name="refresh_intel" value="1">';
+echo '<div class="card"><div class="card-body">';
+echo '<h5 class="mb-2">' . __('Threat intel (CISA KEV + EPSS)', 'impact360') . '</h5>';
+echo '<p class="text-muted small mb-2">'
+    . htmlspecialchars(__('Used by the Vuln Priority tab. Refreshed daily by the "VulnIntel" automatic action; needs outbound HTTPS from the GLPI server to www.cisa.gov and api.first.org (GLPI\'s proxy settings apply).', 'impact360'), ENT_QUOTES, 'UTF-8')
+    . '</p>';
+if ($intel === null) {
+    echo '<div class="text-warning small mb-2">' . __('Cache table missing — re-run the plugin update.', 'impact360') . '</div>';
+} else {
+    echo '<div class="small mb-2">'
+        . htmlspecialchars(sprintf(
+            __('Last refresh: %1$s · %2$d CVEs cached, %3$d in KEV', 'impact360'),
+            $intel['at'] ?? __('never', 'impact360'),
+            $intel['rows'],
+            $intel['kev_rows']
+        ), ENT_QUOTES, 'UTF-8')
+        . '</div>';
+    if ($intel['errors'] !== []) {
+        echo '<div class="text-warning small mb-2">'
+            . htmlspecialchars(implode(' / ', $intel['errors']), ENT_QUOTES, 'UTF-8') . '</div>';
+    }
+}
+echo '<button type="submit" class="btn btn-outline-secondary btn-sm">'
+    . '<i class="ti ti-refresh me-1"></i>' . __('Refresh threat intel now', 'impact360') . '</button>';
 echo '</div></div>'; // card
 echo '</form>';
 

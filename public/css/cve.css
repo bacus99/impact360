@@ -7,29 +7,24 @@
  * than shared so each file stays self-contained.
  */
 
+/* Tokens derive from the active GLPI/Tabler palette (light, dark or custom),
+ * so no per-theme override block is needed. */
 .uxc-cve-board {
-    --uxc-bg:      #1f2329;
-    --uxc-card:    #2a2f37;
-    --uxc-card-2:  #20242b;
-    --uxc-fg:      #e9ecef;
-    --uxc-muted:   #9aa4b2;
-    --uxc-line:    #3a414b;
-    --uxc-ok:      #2fb344;
-    --uxc-bad:     #e5546a;
-    --uxc-warn:    #f1a531;
+    --uxc-bg:      var(--tblr-body-bg, #f6f8fb);
+    --uxc-card:    var(--tblr-bg-surface, var(--tblr-card-bg, #ffffff));
+    --uxc-card-2:  var(--tblr-bg-surface-secondary, var(--tblr-tertiary-bg, #f6f8fb));
+    --uxc-fg:      var(--tblr-body-color, #1d273b);
+    --uxc-muted:   var(--tblr-secondary-color, var(--tblr-secondary, #667382));
+    --uxc-line:    var(--tblr-border-color, #e6e7e9);
+    --uxc-accent:  var(--tblr-primary, #206bc4);
+    --uxc-ok:      var(--tblr-success, #2fb344);
+    --uxc-bad:     var(--tblr-danger, #d63939);
+    --uxc-warn:    var(--tblr-warning, #f59f00);
 
     color: var(--uxc-fg);
 }
-:root[data-bs-theme="light"] .uxc-cve-board {
-    --uxc-bg:     #f5f5f5;
-    --uxc-card:   #ffffff;
-    --uxc-card-2: #f1f3f5;
-    --uxc-fg:     #1a2129;
-    --uxc-muted:  #5b6675;
-    --uxc-line:   #e3e6ea;
-}
 
-.uxc-cve-board h2 { color: var(--tblr-body-color, #1a2129); }
+.uxc-cve-board h2 { color: var(--uxc-fg); }
 .uxc-cve-board .uxc-muted { color: var(--uxc-muted); }
 
 /* ── Cards (filter bar + table wrapper) ── */
@@ -69,7 +64,15 @@
 }
 .uxc-cve-board .uxc-table tbody tr:nth-child(even) { background: var(--uxc-card-2); }
 .uxc-cve-board .uxc-table tbody tr:hover { background: var(--uxc-line); }
-.uxc-cve-board .uxc-table a { color: var(--tblr-link-color, #467fcf); }
+.uxc-cve-board .uxc-table a { color: var(--tblr-link-color, var(--uxc-accent)); }
+
+/* Click-to-sort headers (public/js/cve-sort.js adds .uxc-sortable). */
+.uxc-cve-board .uxc-table th.uxc-sortable { cursor: pointer; user-select: none; }
+.uxc-cve-board .uxc-table th.uxc-sortable:hover { color: var(--uxc-fg); }
+.uxc-cve-board .uxc-table th.uxc-sortable:focus-visible { outline: 2px solid var(--uxc-muted); outline-offset: -2px; }
+.uxc-cve-board .uxc-table th.uxc-sortable::after { content: "\2195"; margin-left: 0.35rem; opacity: 0.35; }
+.uxc-cve-board .uxc-table th.uxc-sort-asc::after  { content: "\25B2"; opacity: 1; }
+.uxc-cve-board .uxc-table th.uxc-sort-desc::after { content: "\25BC"; opacity: 1; }
 
 /* Per-source Yes/No columns, centered (Asset + Type stay left-aligned). */
 .uxc-cve-board .uxc-cve-assets th:not(:first-child):not(:nth-child(2)),

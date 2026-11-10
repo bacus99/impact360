@@ -5,8 +5,9 @@
  *
  * Enter a CVE id, see every asset currently open (vulnerable) for it — across
  * every itemtype the scanners cover (Computer, NetworkEquipment, Phone,
- * Printer, OT/custom asset types) — with a per-source (Nexpose/Defender/
- * Armis) Yes/No column. Membership is not uniform, so this is a per-asset,
+ * Printer, OT/custom asset types, and the Pentest-Tools.com "Websites"
+ * asset) — with a per-source (Nexpose/Defender/Armis/Pentest-Tools) Yes/No
+ * column. Membership is not uniform, so this is a per-asset,
  * per-source view, not a single count. A user missing a source's right never
  * sees that source's column or data (CveExposure::usableSources() fails
  * closed).
@@ -23,7 +24,7 @@
 use GlpiPlugin\Impact360\Config;
 use GlpiPlugin\Impact360\CveExposure;
 
-include('../../../inc/includes.php');
+// No include of GLPI's inc/includes.php: the kernel has already booted before a plugin script runs (GLPI 11 and 12); the relative path fails when the plugin lives in a marketplace directory outside the GLPI root.
 
 global $CFG_GLPI;
 
@@ -107,10 +108,12 @@ if ($assets === []) {
 } else {
     echo '<div class="uxc-table-wrap"><table class="uxc-table uxc-cve-assets">';
     echo '<thead><tr>';
-    echo '<th>' . __('Asset', 'impact360') . '</th>';
-    echo '<th>' . __('Type', 'impact360') . '</th>';
+    // data-sort drives public/js/cve-sort.js (client-side, click to sort).
+    $sortHint = htmlspecialchars(__('Click to sort', 'impact360'), ENT_QUOTES, 'UTF-8');
+    echo '<th data-sort="text" title="' . $sortHint . '">' . __('Asset', 'impact360') . '</th>';
+    echo '<th data-sort="text" title="' . $sortHint . '">' . __('Type', 'impact360') . '</th>';
     foreach ($sourceLabels as $label) {
-        echo '<th>' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</th>';
+        echo '<th data-sort="flag" title="' . $sortHint . '">' . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . '</th>';
     }
     echo '</tr></thead><tbody>';
 
@@ -155,6 +158,8 @@ if ($assets === []) {
     }
 
     echo '</tbody></table></div>';
+    echo '<script src="' . $CFG_GLPI['root_doc'] . '/plugins/impact360/public/js/cve-sort.js?v='
+        . PLUGIN_IMPACT360_VERSION . '"></script>';
 }
 echo '</div>'; // card
 

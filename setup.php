@@ -19,11 +19,13 @@
 use Glpi\Plugin\Hooks;
 use GlpiPlugin\Impact360\ComputerDashboard;
 use GlpiPlugin\Impact360\ConfigMenu;
+use GlpiPlugin\Impact360\CoverageMenu;
 use GlpiPlugin\Impact360\CveMenu;
 use GlpiPlugin\Impact360\ImpactMapTab;
 use GlpiPlugin\Impact360\Menu;
+use GlpiPlugin\Impact360\VulnPriorityTab;
 
-define('PLUGIN_IMPACT360_VERSION',          '1.2.1');
+define('PLUGIN_IMPACT360_VERSION',          '1.4.0');
 define('PLUGIN_IMPACT360_MIN_GLPI_VERSION', '11.0.0');
 define('PLUGIN_IMPACT360_MAX_GLPI_VERSION', '11.99.99');
 
@@ -48,7 +50,7 @@ function plugin_init_impact360(): void
     // verified against GLPI 11.0.8's Html::generateMenuSession(), which does
     // `if (is_array($val)) { foreach ($val as $object) { $menu[$key]['types'][] = $object; } }`.
     $PLUGIN_HOOKS['menu_toadd']['impact360'] = [
-        'plugins' => [Menu::class, CveMenu::class],
+        'plugins' => [Menu::class, CveMenu::class, CoverageMenu::class],
         'config'  => ConfigMenu::class,
     ];
 
@@ -70,6 +72,11 @@ function plugin_init_impact360(): void
         // health checks, software/hardware/lifecycle). Shares the health
         // concept with the impact roll-up, so it lives here too.
         Plugin::registerClass(ComputerDashboard::class, ['addtabon' => ['Computer']]);
+
+        // "Vuln Priority" tab — unified Armis/Nexpose/Defender CVE list per CI,
+        // enriched with CISA KEV + EPSS, ranked by contextual priority
+        // (severity × Armis risk × impact-graph business criticality).
+        Plugin::registerClass(VulnPriorityTab::class, ['addtabon' => VulnPriorityTab::ITEMTYPES]);
     } catch (\Throwable $e) {
         // Early boot / install — skip tab registration.
     }

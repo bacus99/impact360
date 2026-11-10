@@ -24,6 +24,24 @@ roll-up, an Application Health board, and an optional observed-traffic overlay.
   dependencies are overlaid on the map (dashed = observed-only, solid =
   confirmed in native impact), labelled by port and weighted by frequency.
 
+- **Computer Dashboard tab** — CI insight on the Computer form (connectivity,
+  antivirus, health checks, software / hardware / lifecycle).
+- **CVE Exposure lookup** (Plugins → CVE Exposure) — enter a CVE id, see every
+  asset open for it, with a per-source Yes/No column for Armis, Nexpose,
+  Defender and Pentest-Tools.com (soft dependencies, rights-gated, CSV export).
+- **Vuln Priority tab** (1.4.0) on Computer, Network device, Printer and Phone —
+  one de-duplicated CVE list per CI (Armis + Nexpose + Defender), enriched with
+  CISA KEV and EPSS, ranked by a contextual 0–100 score (P1–P4) that factors in
+  business criticality derived from the impact graph. Needs outbound HTTPS to
+  `www.cisa.gov` and `api.first.org` for the threat-intel refresh; works
+  without it (exploitability treated as unknown).
+- **Coverage Gaps board** (1.4.0, Plugins → Coverage Gaps) — per asset, which of
+  Armis / GLPI agent / Defender / Nexpose actually sees it (seen, not found,
+  never checked, stale, discovered-not-onboarded), with a coverage-pattern
+  matrix and CSV export.
+- Dashboards follow the GLPI colour palette selected in My Settings.
+- Modules can be toggled under Setup → Plugins → Impact360.
+
 Read-only throughout, and entity-scoped everywhere except the CVE Exposure
 lookup, which by design lists every visible asset regardless of the active
 entities.
@@ -33,6 +51,9 @@ entities.
 - GLPI `11.x` (`>= 11.0.0`, `< 12.0.0`)
 - PHP `>= 8.1`
 - *(optional)* the `netstatconnections` plugin for the observed-traffic overlay.
+- *(optional)* `armissync`, `nexposesync`, `defendersync`, `pentesttoolssync`
+  for CVE Exposure, Vuln Priority and Coverage Gaps. Each is a soft
+  dependency: absent plugin or missing right = that source is simply skipped.
 
 ## Install
 

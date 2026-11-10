@@ -22,7 +22,7 @@
 use GlpiPlugin\Impact360\Config;
 use GlpiPlugin\Impact360\ImpactMap;
 
-include('../../../inc/includes.php');
+// No include of GLPI's inc/includes.php: the kernel has already booted before a plugin script runs (GLPI 11 and 12); the relative path fails when the plugin lives in a marketplace directory outside the GLPI root.
 
 global $CFG_GLPI;
 
@@ -62,13 +62,18 @@ $applianceUrl = static function (int $id) use ($root, $waActive): string {
         . '&forcetab=' . rawurlencode('GlpiPlugin\\Impact360\\ImpactMapTab$1');
 };
 
-/** Health level → [color, label, tabler icon]. */
+/**
+ * Health level → [color, label, tabler icon].
+ * Colours are the active GLPI palette's status variables (literal = fallback
+ * only); $col is used solely inside inline style="" properties, where var()
+ * resolves normally.
+ */
 $styleFor = static function (?string $lvl): array {
     switch ($lvl) {
-        case 'crit': return ['#d63939', __('Critical', 'impact360'), 'ti-alert-triangle-filled'];
-        case 'warn': return ['#f59f00', __('Warning', 'impact360'),  'ti-alert-triangle'];
-        case 'ok':   return ['#2fb344', __('Healthy', 'impact360'),   'ti-circle-check'];
-        default:     return ['#6b7280', __('No data', 'impact360'),   'ti-help-circle'];
+        case 'crit': return ['var(--tblr-danger, #d63939)',    __('Critical', 'impact360'), 'ti-alert-triangle-filled'];
+        case 'warn': return ['var(--tblr-warning, #f59f00)',   __('Warning', 'impact360'),  'ti-alert-triangle'];
+        case 'ok':   return ['var(--tblr-success, #2fb344)',   __('Healthy', 'impact360'),   'ti-circle-check'];
+        default:     return ['var(--tblr-secondary, #667382)', __('No data', 'impact360'),   'ti-help-circle'];
     }
 };
 

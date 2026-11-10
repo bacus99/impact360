@@ -174,13 +174,19 @@ $num     = static fn($v) => $v === null ? '—' : (int) $v;
   <!-- CVE Exposure: combined Nexpose + Defender CVE table (top 10, full list via Export) -->
   <?php if ($data['cves'] !== null):
     $cveSeverity = static function (string $sev) use ($h): string {
+        // [background, text] — palette-driven via the .uxc-ci-detail tokens
+        // (dashboard.css); dark text on the amber/yellow fills for contrast.
         $map = [
-            'critical' => '#d63939', 'severe' => '#f59f00', 'high' => '#f59f00',
-            'moderate' => '#f7c948', 'medium' => '#f7c948', 'low' => '#74b816',
+            'critical' => ['var(--uxc-bad)', '#fff'],
+            'severe'   => ['var(--uxc-warn)', '#1d273b'],
+            'high'     => ['var(--uxc-warn)', '#1d273b'],
+            'moderate' => ['var(--tblr-yellow, #f7c948)', '#1d273b'],
+            'medium'   => ['var(--tblr-yellow, #f7c948)', '#1d273b'],
+            'low'      => ['var(--tblr-lime, #74b816)', '#fff'],
         ];
-        $color = $map[$sev] ?? '#6c757d';
+        [$bg, $fg] = $map[$sev] ?? ['var(--tblr-secondary, #667382)', '#fff'];
         $label = $sev !== '' ? ucfirst($sev) : __('Unknown', 'impact360');
-        return '<span class="uxc-pill" style="background:' . $color . ';color:#fff">' . $h($label) . '</span>';
+        return '<span class="uxc-pill" style="background:' . $bg . ';color:' . $fg . '">' . $h($label) . '</span>';
     };
     $sourceLabels = ['nexpose' => __('Nexpose', 'impact360'), 'defender' => __('Defender', 'impact360')];
     $allCves      = $data['cves']['items'];
@@ -220,7 +226,7 @@ $num     = static fn($v) => $v === null ? '—' : (int) $v;
               <td><?= $h($row['cve']) ?></td>
               <td><?= $h(mb_strimwidth($row['title'], 0, 60, '…')) ?></td>
               <td><?= $row['cvss'] !== '' ? $h($row['cvss']) : '—' ?></td>
-              <td><?= $row['exploitable'] ? '<span class="uxc-pill" style="background:#ae3ec9;color:#fff">' . __('Yes', 'impact360') . '</span>' : '—' ?></td>
+              <td><?= $row['exploitable'] ? '<span class="uxc-pill" style="background:var(--uxc-purple);color:#fff">' . __('Yes', 'impact360') . '</span>' : '—' ?></td>
               <td>
                 <?php foreach ($sourceLabels as $key => $label): ?>
                   <?php if (isset($row['sources'][$key])): ?>
@@ -232,8 +238,8 @@ $num     = static fn($v) => $v === null ? '—' : (int) $v;
                 <?php endforeach; ?>
               </td>
               <td><?= $row['vulnerable']
-                    ? '<span class="uxc-pill" style="background:#d63939;color:#fff">' . __('Vulnerable', 'impact360') . '</span>'
-                    : '<span class="uxc-pill" style="background:#2fb344;color:#fff">' . __('Remediated', 'impact360') . '</span>' ?></td>
+                    ? '<span class="uxc-pill" style="background:var(--uxc-bad);color:#fff">' . __('Vulnerable', 'impact360') . '</span>'
+                    : '<span class="uxc-pill" style="background:var(--uxc-ok);color:#fff">' . __('Remediated', 'impact360') . '</span>' ?></td>
               <td><?= $fmtDate($row['last_seen']) ?></td>
             </tr>
           <?php endforeach; ?>

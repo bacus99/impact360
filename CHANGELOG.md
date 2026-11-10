@@ -5,6 +5,91 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-11-04
+
+### Added
+- **"Vuln Priority" tab** on Computer, Network device, Printer and Phone: one
+  de-duplicated CVE list per CI merging the **open** findings of Armis,
+  Nexpose and Defender (same CVE from several scanners = one row with every
+  source shown), enriched with **CISA KEV** (listed, due date, known
+  ransomware use) and **EPSS** (probability + percentile), and ranked by a
+  **contextual priority score** 0–100:
+  `CVSS/10 × exploit × Armis risk × business criticality`, tiers P1–P4.
+  The CI's priority is its highest CVE score; hovering a score shows the four
+  factors behind it. Business criticality (1–5) is **derived from the impact
+  graph**: application membership, whether an application is production
+  (Appliance environment), and downstream dependents (1 hop). Read-only; same
+  fail-closed source gating as CVE Exposure. Toggle under Setup → Plugins →
+  Impact360 → Modules.
+- **Threat-intel cache** `glpi_plugin_impact360_cve_intel` + daily automatic
+  action **VulnIntel** pulling the CISA KEV feed and FIRST EPSS scores (EPSS
+  only for CVEs present in the scanner catalogs). Uses GLPI's HTTP client, so
+  the proxy set in Setup → General applies. A "Refresh threat intel now"
+  button on the config page runs the same refresh on demand. Needs outbound
+  HTTPS to `www.cisa.gov` and `api.first.org`; without it the tab still works
+  and treats exploitability as unknown (neutral).
+
+- **Coverage Gaps board** (Plugins → Coverage Gaps, `front/coverage.php`):
+  for every asset, which sources actually see it — **Armis, GLPI agent,
+  Defender, Nexpose**. Headline tiles (Armis-only "unmanaged attack surface",
+  not seen by each source, seen by none, fully covered), a **coverage-pattern
+  matrix** (every Armis/agent/Defender/Nexpose combination with its asset
+  count — click to list), and a paginated asset table with a per-source
+  state: *seen*, *checked but not found*, *never checked* (the scanner
+  plugin hasn't looked at that asset/type), *stale* (agent silent, or Armis/
+  Defender not seen, for 30 days; Nexpose not scanned for 90 days) and, for
+  Defender, *discovered but not onboarded* (Defender knows the device from
+  network discovery but there is no EDR sensor on it). Only *seen* counts as
+  covered. GLPI 11 custom asset types are each limited to their own asset
+  definition; the name search runs in SQL, before the 50,000-asset cap. Also counts GLPI
+  "Unmanaged" devices that armissync's classification identified in Armis —
+  Armis-only devices not even inventoried yet. CSV export of the current
+  filter. Entity-scoped; each source is fail-closed on its plugin + right
+  (the agent column on GLPI's own Agent view right). One indexed read per
+  source per asset type, merged in PHP — no cross-source SQL aggregate.
+  Toggle under Setup → Plugins → Impact360 → Modules.
+
+### Changed
+- **All Impact360 dashboards follow the GLPI colour palette you select** in
+  My Settings (light, dark, or a custom palette such as the uxcustomizer TC
+  Transcontinental one): Computer Dashboard, CVE Exposure, Vuln Priority,
+  Coverage Gaps, Application Health and the Impact Map (including the
+  canvas-drawn labels/edges, which read the palette at load). Previously
+  most of them used fixed dark colours with a light-theme swap. Vendor logo
+  colours and the Impact Map's per-asset-type colours are intentionally kept.
+
+### Notes
+- Upgrading from 1.3.x creates the new table and registers the automatic
+  action (GLPI prompts for the plugin update because the version changed).
+- Uninstall drops the new table and removes the automatic action.
+
+## [1.3.0] - 2026-10-28
+
+### Added
+- **CVE Exposure now includes Pentest-Tools.com website findings** as a fourth
+  source column ("Pentest-Tools"), next to Armis / Nexpose / Defender. The
+  "Websites" custom asset appears in the results (Type = Websites) when a
+  website has an **open** finding carrying the CVE. Read-only, same
+  soft-dependency rules as the other sources: `pentesttoolssync` active, its
+  tables present, and READ on its `plugin_pentesttoolssync_vulnerability`
+  right — a session without that right never sees the column or the data.
+  The CSV export gets the column too.
+  - Matching differs from the other sources: Pentest-Tools.com keeps the CVE
+    ids on the finding row (`cve`, comma-separated), not on the shared
+    catalog row, so the lookup is an exact element match on that list
+    (`FIND_IN_SET`), not a substring match, and uses Pentest-Tools.com's own
+    `open` status instead of `vulnerable`. Findings synced before
+    pentesttoolssync 1.2.5 have no per-finding CVE until their next nightly
+    sync, so they appear after that sync runs.
+  - When one asset has several findings with the same CVE, the widest
+    first-seen / last-seen window is kept (applies to every source).
+- **Click-to-sort on the CVE Exposure table.** Click a column header to sort
+  by it; click again to reverse. The source columns (Armis, Nexpose, Defender,
+  Pentest-Tools) put "Yes" first on the first click, so the assets flagged by
+  that tool come to the top; Asset and Type sort A to Z (numeric-aware). Ties
+  fall back to the asset name. Client-side only (`public/js/cve-sort.js`), no
+  extra request; the CSV export order is unchanged.
+
 ## [1.2.1] - 2026-10-01
 
 ### Changed
